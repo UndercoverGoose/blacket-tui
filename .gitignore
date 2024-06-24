@@ -1,0 +1,17 @@
+logs
+_.log
+.pnpm-debug.log*
+.cache
+pids
+_.pid
+_.seed
+*.pid.lock
+node_modules/
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+.temp
+*.temp
+.DS_Store
