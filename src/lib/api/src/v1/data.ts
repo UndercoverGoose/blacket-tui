@@ -150,11 +150,15 @@ type APIResponse = {
   data: Data;
 };
 
+let cached_data: APIResponse | null = null;
+
 /**
  * Gets default data like Blooks, Packs, and more.
+ * @param use_cache Whether to use a cached version of the data or not. The cached version is likely to be identical to the live version (excluding booster status).
  * @returns The default data.
  */
-export default async function (): Promise<APIResponse | FetchError> {
+export default async function (use_cache = false): Promise<APIResponse | FetchError> {
+  if (use_cache && cached_data) return cached_data;
   const res = await fetch('https://blacket.org/data/index.json', {
     headers: BASE_HEADERS,
     method: 'GET',
@@ -162,10 +166,11 @@ export default async function (): Promise<APIResponse | FetchError> {
   switch (res.status) {
     case 200: {
       const json = (await res.json()) as Data;
-      return {
+      cached_data = {
         error: false,
         data: json,
       };
+      return cached_data;
     }
     default: {
       return {

@@ -19,7 +19,7 @@ const select6 = new Select('', ['[0] Stop '], {
 export default async function (terminal: Terminal, token: string, set_tokens: (t: number | null, d?: number) => void): Promise<void> {
   text.text = Color.yellow('Fetching market...');
   terminal.push(text);
-  const _data = await v1.data();
+  const _data = await v1.data(true);
   if (_data.error) {
     text.text += Color.red(`\nFailed to fetch market: ${_data.reason}`);
     terminal.write_buffer();
@@ -28,7 +28,7 @@ export default async function (terminal: Terminal, token: string, set_tokens: (t
   const data = _data.data;
   function rarity_color(rarity: string): string {
     const rarity_info = data.rarities[rarity];
-    if (!rarity_info) return '#fffff';
+    if (!rarity_info) return '#ffffff';
     return rarity_info.color;
   }
   const all_blooks = data.blooks;
