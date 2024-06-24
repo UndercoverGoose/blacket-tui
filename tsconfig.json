@@ -13,6 +13,8 @@
     "noEmit": true,
     "paths": {
       "@lib/*": ["./src/lib/*"],
+      "@ctx/*": ["./src/context/*"],
+      "@component/*": ["./src/component/*"]
     },
     "strict": true,
     "skipLibCheck": true,

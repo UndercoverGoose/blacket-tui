@@ -1,12 +1,23 @@
 import { type Terminal, Text } from '@lib/tui';
-import Select from '../component/select';
-import leaderboard from './leaderboard';
-import inventory from './inventory';
-import market from './market';
+import { Select } from '@component/.';
+import leaderboard from '@ctx/leaderboard';
+import inventory from '@ctx/inventory';
+import market from '@ctx/market';
 
 const main_select = new Select(
   'Select a page to view:',
-  ['[0] Statistics ', '[1] Leaderboard ', '[2] Chat ', '[3] Clan ', '[4] Market ', '[5] Blooks ', '[6] Bazaar ', '[7] Inventory ', '[8] Settings ', '[9] News '],
+  [
+    '[0] Statistics ',
+    '[1] Leaderboard ',
+    '[2] Chat ',
+    '[3] Clan ',
+    '[4] Market ',
+    '[5] Blooks ',
+    '[6] Bazaar ',
+    '[7] Inventory ',
+    '[8] Settings ',
+    '[9] News ',
+  ],
   {
     disabled_indexes: [0, 2, 3, 5, 6, 8, 9],
   }

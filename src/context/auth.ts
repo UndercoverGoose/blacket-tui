@@ -1,8 +1,7 @@
 import Color from '@lib/color';
 import { type Terminal, Text } from '@lib/tui';
-import Select from '../component/select';
+import { Select, Input } from '@component/.';
 import { Dynamic } from '@lib/dynamic';
-import Input from '../component/input';
 import v1 from '@lib/api';
 
 type Store = {

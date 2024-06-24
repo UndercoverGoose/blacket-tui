@@ -1,7 +1,7 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import Select from '../component/select';
+import { Select } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('Select an item to view:', []);
