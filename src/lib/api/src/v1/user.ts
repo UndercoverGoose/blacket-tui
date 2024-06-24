@@ -15,7 +15,7 @@ interface UserForeign {
     name: string;
     color: string;
     room: number;
-  };
+  } | null;
   role: string;
   color: string;
   exp: number;

@@ -21,7 +21,7 @@ if (_user.error) {
 }
 if (_user.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
 const user = _user.user;
-username_header.text = Color.join(Color.hex(user.color, user.username, ' '), Color.hex(user.clan.color, `[${user.clan.name}]`));
+username_header.text = Color.join(Color.hex(user.color, user.username, ' '), user.clan ? Color.hex(user.clan.color, `[${user.clan.name}]`) : '');
 tokens_header.text = Color.yellow(`${user.tokens.toLocaleString()} tokens`);
 terminal.write_buffer();
 
