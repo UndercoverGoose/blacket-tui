@@ -4,7 +4,7 @@ import auth_context from './src/context/auth';
 import main_context from './src/context/main';
 import v1 from '@lib/api';
 
-const VERSION = '0.6.0';
+const VERSION = '0.6.1-beta1';
 
 const terminal = new Terminal();
 const version_header = new Text(-1, 0, Color.bright_magenta(`[blacket-tui ~ v${VERSION}]`), 1, -1);
