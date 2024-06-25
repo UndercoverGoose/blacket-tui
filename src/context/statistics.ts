@@ -2,7 +2,7 @@ import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
 import { Select, Input } from '@component/.';
-import { can_claim, claim_in_formatted } from '../util/claim';
+import { can_claim, claim_in_formatted } from '@util/claim';
 import type { UserForeign } from '@lib/api/src/v1/user';
 import type { Data } from '@lib/api/src/v1/data';
 

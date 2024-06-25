@@ -14,7 +14,8 @@
     "paths": {
       "@lib/*": ["./src/lib/*"],
       "@ctx/*": ["./src/context/*"],
-      "@component/*": ["./src/component/*"]
+      "@component/*": ["./src/component/*"],
+      "@util/*": ["./src/util/*"],
     },
     "strict": true,
     "skipLibCheck": true,
