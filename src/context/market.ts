@@ -4,14 +4,16 @@ import Color from '@lib/color';
 import { Select, Notification } from '@component/.';
 
 const text = new Text(0, 0, '');
-const select = new Select('Select a page to view:', ['[0] Packs ', '[1] Weekly Shop ']);
+const select = new Select('Select a page to view:', ['[0] Packs ', '[1] Items & Weekly Shop ']);
 const select2 = new Select('Select a pack to view:', []);
 select2.component.v_wrap = false;
 const select3 = new Select('Select an option to perform:', ['[0] View Blooks ', '[1] Purchase Pack ', '[2] Purchase Pack in Bulk ']);
 const select4 = new Select('Blooks:', []);
+const select5 = new Select('Items:', []);
 const select6 = new Select('', ['[0] Stop '], {
   header_func: s => s,
 });
+const select7 = new Select('', ['[0] No ', '[1] Yes ']);
 
 /**
  * The market context for viewing and purchasing packs
@@ -41,7 +43,13 @@ export default async function (
   }
   const all_blooks = data.blooks;
   const packs = data.packs;
-  const items = data.weekly_shop;
+  const items = {
+    'Clan Shield': { price: 100000, glow: false },
+    'Fragment Grenade (Item)': { price: 100000, glow: false },
+    'Stealth Disguise Kit (Item)': { price: 250000, glow: false },
+    ...data.weekly_shop,
+  };
+
   text.text = '';
   main: while (true) {
     terminal.push(select.component);
@@ -178,6 +186,31 @@ export default async function (
         }
       }
       case 1: {
+        const items_map = Object.entries(items);
+        select5.set_options(items_map.map(([k, v], idx) => `[${idx}] ${k} - ${v.price.toLocaleString()} tokens `));
+        shop: while (true) {
+          terminal.push(select5.component);
+          const _select5 = await select5.response();
+          terminal.pop(select5.component);
+          if (_select5 === -1) break shop;
+          const [item_name, item_info] = items_map[_select5];
+          select7.set_question(`Are you sure you want to purchase ${Color.bold(item_name)} for ${Color.bold(item_info.price.toLocaleString())} tokens?`);
+          select7.set_selected_index(0);
+          terminal.push(select7.component);
+          const _select7 = await select7.response();
+          terminal.pop(select7.component);
+          switch (_select7) {
+            case -1:
+            case 0: {
+              continue shop;
+            }
+            case 1: {
+              const _buy = await v1.buy(token, item_name);
+              if (_buy.error) notif_section.push_error(_buy.reason);
+              else notif_section.push_success(_buy.message);
+            }
+          }
+        }
       }
     }
   }
