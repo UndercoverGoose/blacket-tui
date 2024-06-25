@@ -18,6 +18,10 @@ type Options = {
    * The function to filter the choices by.
    */
   filter_func?: (s: string, v: string) => boolean;
+  /**
+   * The function to mutate the matched values before rendering.
+   */
+  mutate?: (s: string) => string;
 };
 
 export default class Searchable {
@@ -30,6 +34,7 @@ export default class Searchable {
   private placeholder: string;
   private filter_func?: (s: string, v: string) => boolean;
   private resolve_func?: (s: number) => void;
+  mutate_func: (s: string) => string;
   /**
    * Creates a new Searchable select component.
    * @param question The question to ask or header to display.
@@ -44,6 +49,7 @@ export default class Searchable {
     this.search_value = options?.search_value ?? '';
     this.placeholder = options?.placeholder ?? 'Search...';
     this.filter_func = options?.filter_func;
+    this.mutate_func = options?.mutate || (s => s);
 
     this.component.process_key = (key: string) => {
       if (!this.resolve_func) return false;
@@ -142,8 +148,8 @@ export default class Searchable {
         .map((choice, index) => [choice, index] as const)
         .filter((_, index) => this.visible_choices_indexes.includes(index))
         .map(([choice, index]) => {
-          if (index === this.selected_index) return Color.inverse(Color.green(choice));
-          return Color.green(choice);
+          if (index === this.selected_index) return Color.inverse(Color.green(this.mutate_func(choice)));
+          return Color.green(this.mutate_func(choice));
         })
         .join('\n')
     );
