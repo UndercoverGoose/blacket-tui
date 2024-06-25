@@ -49,7 +49,7 @@ export function ac(code: number | string, ...strs: (string | string[])[]): strin
  */
 export function parse_hex_ansi(hex: string): string {
   if(hex.startsWith('#')) hex = hex.slice(1);
-  if (hex.length !== 6) throw new Error('Invalid Hex Color.');
+  if (hex.length !== 6) throw new Error(`Invalid Hex Color '${hex}'`);
   return hex
     .match(/.{1,2}/g)!
     .map(h => parseInt(h, 16).toString())
