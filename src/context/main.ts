@@ -3,6 +3,7 @@ import { Select } from '@component/.';
 import leaderboard from '@ctx/leaderboard';
 import inventory from '@ctx/inventory';
 import market from '@ctx/market';
+import statistics from '@ctx/statistics';
 
 const main_select = new Select(
   'Select a page to view:',
@@ -19,7 +20,7 @@ const main_select = new Select(
     '[9] News ',
   ],
   {
-    disabled_indexes: [0, 2, 3, 5, 6, 8, 9],
+    disabled_indexes: [2, 3, 5, 6, 8, 9],
   }
 );
 
@@ -35,6 +36,10 @@ export default async function (terminal: Terminal, token: string, set_tokens: (t
     const _select = await main_select.response();
     terminal.pop(main_select.component);
     switch (_select) {
+      case 0: {
+        await statistics(terminal, token, set_tokens);
+        break;
+      }
       case 1: {
         await leaderboard(terminal, token);
         break;
