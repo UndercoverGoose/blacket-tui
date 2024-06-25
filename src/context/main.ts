@@ -4,6 +4,7 @@ import leaderboard from '@ctx/leaderboard';
 import inventory from '@ctx/inventory';
 import market from '@ctx/market';
 import statistics from '@ctx/statistics';
+import blooks from '@ctx/blooks';
 
 const main_select = new Select(
   'Select a page to view:',
@@ -20,7 +21,7 @@ const main_select = new Select(
     '[9] News ',
   ],
   {
-    disabled_indexes: [2, 3, 5, 6, 8, 9],
+    disabled_indexes: [2, 3, 6, 8, 9],
   }
 );
 
@@ -30,7 +31,12 @@ const main_select = new Select(
  * @param token The token of the authenticated account
  * @param set_tokens A callback that sets the tokens header value
  */
-export default async function (terminal: Terminal, token: string, notif_section: Notification, set_tokens: (t: number | null, d?: number) => void): Promise<void> {
+export default async function (
+  terminal: Terminal,
+  token: string,
+  notif_section: Notification,
+  set_tokens: (t: number | null, d?: number) => void
+): Promise<void> {
   while (true) {
     terminal.push(main_select.component);
     const _select = await main_select.response();
@@ -46,6 +52,10 @@ export default async function (terminal: Terminal, token: string, notif_section:
       }
       case 4: {
         await market(terminal, token, notif_section, set_tokens);
+        break;
+      }
+      case 5: {
+        await blooks(terminal, token, notif_section, set_tokens);
         break;
       }
       case 7: {
