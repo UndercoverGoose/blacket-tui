@@ -1,6 +1,6 @@
 import { BASE_HEADERS, type FetchError } from '.';
 
-type Data = {
+export type Data = {
   config: {
     name: string;
     version: string;

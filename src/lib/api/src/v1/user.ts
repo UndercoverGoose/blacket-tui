@@ -1,6 +1,6 @@
 import { AUTH_HEADERS, type FetchError } from '.';
 
-interface UserForeign {
+export interface UserForeign {
   id: number;
   username: string;
   created: number;
@@ -27,7 +27,7 @@ interface UserForeign {
   };
   friends: number[];
 }
-interface User extends UserForeign {
+export interface User extends UserForeign {
   perms: string[];
   inventory: string[];
   blocks: number[];
