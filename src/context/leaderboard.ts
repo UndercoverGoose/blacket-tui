@@ -4,6 +4,11 @@ import Color from '@lib/color';
 
 const text = new Text(0, 0, '', 1, 1, false);
 
+/**
+ * The leaderboard context for viewing the leaderboard
+ * @param terminal Reference to the root terminal
+ * @param token The token of the authenticated account
+ */
 export default async function (terminal: Terminal, token: string): Promise<void> {
   text.text = Color.yellow('Fetching leaderboard...');
   terminal.push(text);

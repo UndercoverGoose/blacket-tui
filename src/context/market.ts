@@ -16,6 +16,12 @@ const select6 = new Select('', ['[0] Stop '], {
   header_func: s => s,
 });
 
+/**
+ * The market context for viewing and purchasing packs
+ * @param terminal Reference to the root terminal
+ * @param token The token of the authenticated account
+ * @param set_tokens A callback that sets the tokens header value
+ */
 export default async function (terminal: Terminal, token: string, set_tokens: (t: number | null, d?: number) => void): Promise<void> {
   text.text = Color.yellow('Fetching market...');
   terminal.push(text);

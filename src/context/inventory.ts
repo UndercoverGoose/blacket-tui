@@ -10,6 +10,11 @@ const select3 = new Select('', ['[0] Back'], {
   header_func: s => s,
 });
 
+/**
+ * Inventory manager
+ * @param terminal Reference to the root terminal
+ * @param token The token of the authenticated account
+ */
 export default async function (terminal: Terminal, token: string): Promise<void> {
   main_refetch: while (true) {
     text.text = Color.yellow('Fetching inventory...');
