@@ -1,19 +1,24 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Input, Notification } from '@component/.';
+import { Select, Input, Notification, Searchable } from '@component/.';
 import { can_claim, claim_in_formatted } from '@util/claim';
 import type { UserForeign } from '@lib/api/src/v1/user';
 import type { Data } from '@lib/api/src/v1/data';
 
 const text = new Text(0, 0, '');
 const text2 = new Text(0, 6, '');
-const select_choices = ['[0] View Stats ', '[1] Trade Player ', '[2] Manage Friends', '[3] Claim Daily Reward '];
+const select_choices = ['[0] View Stats ', '[1] Trade Player ', '[2] Manage Friends ', '[3] Claim Daily Reward '];
 const select = new Select('Select an action to perform:', select_choices, {
   disabled_indexes: [1, 4],
 });
 const input = new Input('Enter the username or ID of the player:', {
   placeholder: 'Username or ID',
+});
+const friends_select = new Searchable('Select a friend for more options:', []);
+const select2 = new Select('Select an action to perform:', ['[0] View Stats ', '[1] Send Trade Request ', '[2] Unfriend ', '[3] Block '], {
+  disabled_indexes: [1, 2, 3],
+  header_func: s => s,
 });
 
 let cached_data: Data | null = null;
@@ -24,7 +29,7 @@ function set_text_2(user: UserForeign) {
     ': ',
     Color.hex(user.color, user.username),
     !user.clan ? '' : Color.hex(user.clan.color, ' [' + user.clan.name + ']'),
-    ` #${user.id}\n`,
+    Color.bright_black(` #${user.id}\n`),
     Color.underline('Joined'),
     `: ${new Date(user.created * 1000).toDateString()}\n`,
     Color.underline('Tokens'),
@@ -90,7 +95,6 @@ export default async function (
   const user = res.user;
 
   set_text_2(user);
-  terminal.push(text2);
 
   if (can_claim(new Date(+user.claimed * 1000))) select.set_disabled_indexes([1, 4]);
   else {
@@ -99,7 +103,7 @@ export default async function (
   }
 
   main: while (true) {
-    terminal.push(select.component);
+    terminal.push(select.component, text2);
     const _select = await select.response();
     terminal.pop(select.component);
     switch (_select) {
@@ -125,6 +129,43 @@ export default async function (
         break;
       }
       case 2: {
+        terminal.pop(text2);
+        const friends = await v1.friends(token);
+        if (friends.error) {
+          notif_section.push_error(friends.reason);
+          break;
+        }
+        const friends_map = friends.friends.map(f => f.username);
+        console.log(friends_map.length);
+        friends_select.set_choices(friends_map);
+        terminal.push(friends_select.component);
+        const _select = await friends_select.response();
+        terminal.pop(friends_select.component);
+        if (_select === -1) break;
+        const selected_friend = friends.friends[_select];
+        select2.set_question(
+          Color.join(
+            Color.green(Color.underline('Select an action to perform on'), ' '),
+            Color.hex(selected_friend.color, '[', selected_friend.role, '] ', selected_friend.username)
+          )
+        );
+        terminal.push(select2.component);
+        const _select2 = await select2.response();
+        terminal.pop(select2.component);
+        switch (_select2) {
+          case -1: {
+            break;
+          }
+          case 0: {
+            const res2 = await v1.user(token, selected_friend.id);
+            if (res2.error) {
+              notif_section.push_error(res2.reason);
+              break;
+            }
+            set_text_2(res2.user);
+            break;
+          }
+        }
         break;
       }
       case 3: {
