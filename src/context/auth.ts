@@ -125,7 +125,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
             username: res2.user.username,
             password: _password,
           };
-          set_text(Color.green('Credential saved.'), true);
+          notif_section.push_success(`Saved credentials for ${Color.italic(res2.user.username)}`);
           break;
         }
         terminal.pop(username.component, password.component, up_text);
@@ -139,15 +139,26 @@ export default async function (terminal: Terminal, notif_section: Notification):
           const _token = await token.response(); //! add validation to component
           if (_token === '') break;
           const res = await v1.auth_status(_token);
-          if (res.error) continue;
-          if (!res.authed) continue;
+          if (res.error) {
+            notif_section.push_error(res.reason);
+            continue;
+          }
+          if (!res.authed) {
+            notif_section.push_error('Token is invalid.');
+            continue;
+          }
           const user = await v1.user(_token);
-          if (user.error || user.is_foreign) continue;
+          if (user.error) {
+            notif_section.push_error(user.reason);
+            continue;
+          }
+          if (user.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
           Store[user.user.id] = {
             type: 'token',
             username: user.user.username,
             token: _token,
           };
+          notif_section.push_success(`Saved credentials for ${Color.italic(user.user.username)}`);
         }
         terminal.pop(token.component);
         break;

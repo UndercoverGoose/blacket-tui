@@ -6,9 +6,6 @@ import { Select, Notification } from '@component/.';
 const text = new Text(0, 0, '');
 const select = new Select('Select an item to view:', []);
 const select2 = new Select('Select an action to perform:', ['[0] Use Item', '[1] List Item']);
-const select3 = new Select('', ['[0] Back'], {
-  header_func: s => s,
-});
 
 /**
  * Inventory manager
@@ -21,8 +18,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
     terminal.push(text);
     const res = await v1.user(token);
     if (res.error) {
-      text.text += Color.red(`\nFailed to fetch inventory: ${res.reason}`);
-      terminal.write_buffer();
+      notif_section.push_error(res.reason);
       break;
     }
     if (res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
@@ -52,21 +48,12 @@ export default async function (terminal: Terminal, token: string, notif_section:
           terminal.write_buffer();
           const res = await v1.use(token, item);
           text.text = '';
-          if (res.error) {
-            select3.set_question(Color.red(Color.underline('Failed to use item:\n'), res.reason));
-            terminal.push(select3.component);
-            await select3.response();
-            terminal.pop(select3.component);
-            continue main;
-          }
-          select3.set_question(Color.green(Color.underline('Successfully used item!\n'), res.message));
-          terminal.push(select3.component);
-          await select3.response();
-          terminal.pop(select3.component);
+          if(res.error) notif_section.push_error(res.reason);
+          else notif_section.push_success(res.message);
           continue main;
         }
       }
     }
   }
-  terminal.pop(text, select.component, select3.component);
+  terminal.pop(text, select.component);
 }

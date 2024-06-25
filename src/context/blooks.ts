@@ -23,13 +23,13 @@ export default async function (
   const _data = await v1.data(true);
   const user = await v1.user(token);
   if (user.error) {
-    text.text += Color.red(`\nFailed to fetch user blooks: ${user.reason}`);
-    terminal.write_buffer();
+    notif_section.push_error(user.reason);
+    terminal.pop(text);
     return;
   }
   if (_data.error) {
-    text.text += Color.red(`\nFailed to fetch blook info: ${_data.reason}`);
-    terminal.write_buffer();
+    notif_section.push_error(_data.reason);
+    terminal.pop(text);
     return;
   }
   const data = _data.data;
@@ -41,6 +41,7 @@ export default async function (
   }
   main: while (true) {
     terminal.push(select.component);
+    break;
   }
   terminal.pop(text, select.component);
 }

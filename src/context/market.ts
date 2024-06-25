@@ -9,9 +9,6 @@ const select2 = new Select('Select a pack to view:', []);
 select2.component.v_wrap = false;
 const select3 = new Select('Select an option to perform:', ['[0] View Blooks ', '[1] Purchase Pack ', '[2] Purchase Pack in Bulk ']);
 const select4 = new Select('Blooks:', []);
-const select5 = new Select('', ['[0] Back '], {
-  header_func: s => s,
-});
 const select6 = new Select('', ['[0] Stop '], {
   header_func: s => s,
 });
@@ -32,8 +29,8 @@ export default async function (
   terminal.push(text);
   const _data = await v1.data(true);
   if (_data.error) {
-    text.text += Color.red(`\nFailed to fetch market: ${_data.reason}`);
-    terminal.write_buffer();
+    notif_section.push_error(_data.reason);
+    terminal.pop(text);
     return;
   }
   const data = _data.data;
@@ -92,26 +89,13 @@ export default async function (
                 const res = await v1.open(token, pack_name);
                 text.text = '';
                 if (res.error) {
-                  select5.set_question(Color.red(Color.underline('Failed to purchase pack:\n'), res.reason));
-                  terminal.push(select5.component);
-                  await select5.response();
-                  terminal.pop(select5.component);
+                  notif_section.push_error(res.reason);
                   break;
                 }
                 set_tokens(null, pack_info.price);
                 const blook_info = all_blooks[res.blook];
-                if (!blook_info) select5.set_question(Color.green(Color.underline(`Received`), ': ', Color.white(res.blook)));
-                else
-                  select5.set_question(
-                    Color.green(
-                      Color.underline('Received'),
-                      ': ',
-                      Color.join(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`))
-                    )
-                  );
-                terminal.push(select5.component);
-                await select5.response();
-                terminal.pop(select5.component);
+                if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
+                else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
                 break;
               }
               case 2: {
@@ -128,7 +112,15 @@ export default async function (
                   });
                   auto_open: while (run) {
                     const res = await v1.open(token, pack_name);
-                    if (res.error) continue;
+                    if (res.error) {
+                      notif_section.push_error(res.reason);
+                      continue;
+                    }
+
+                    const blook_info = all_blooks[res.blook];
+                    if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
+                    else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
+
                     opened++;
                     tokens_spent += pack_info.price;
                     set_tokens(null, pack_info.price);

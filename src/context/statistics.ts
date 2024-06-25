@@ -73,12 +73,16 @@ export default async function (
   const res = await v1.user(token);
   if (!cached_data) {
     const _data = await v1.data(true);
-    if (_data.error) return;
+    if (_data.error) {
+      notif_section.push_error(_data.reason);
+      terminal.pop(text);
+      return;
+    }
     cached_data = _data.data;
   }
   if (res.error) {
-    text.text += Color.red(`\nFailed to fetch statistics: ${res.reason}`);
-    terminal.write_buffer();
+    notif_section.push_error(res.reason);
+    terminal.pop(text);
     return;
   }
   if (res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
@@ -109,7 +113,10 @@ export default async function (
         terminal.pop(input.component);
         if (_input === '') break;
         const res2 = await v1.user(token, _input);
-        if (res2.error) break;
+        if (res2.error) {
+          notif_section.push_error(res2.reason);
+          break;
+        }
         set_text_2(res2.user);
         terminal.write_buffer();
         break;

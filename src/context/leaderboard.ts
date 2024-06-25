@@ -15,8 +15,8 @@ export default async function (terminal: Terminal, token: string, notif_section:
   terminal.push(text);
   const lb = await v1.leaderboard(token);
   if (lb.error) {
-    text.text += Color.red(`\nFailed to fetch leaderboard: ${lb.reason}`);
-    terminal.write_buffer();
+    notif_section.push_error(lb.reason);
+    terminal.pop(text);
     return;
   }
   text.text = Color.join(
