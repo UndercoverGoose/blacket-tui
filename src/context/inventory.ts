@@ -30,7 +30,13 @@ export default async function (terminal: Terminal, token: string, notif_section:
     }
     main: while (true) {
       const options = Object.entries(inventory_mapped);
-      select.set_options(options.map(([k, v], idx) => `[${idx}] ${k} x${v} `));
+      if (inventory.length > 0) {
+        select.set_options(options.map(([k, v], idx) => `[${idx}] ${k} x${v} `));
+        select.set_disabled_indexes([]);
+      } else {
+        select.set_options([Color.bright_black('No items in inventory.')]);
+        select.set_disabled_indexes([0]);
+      }
       terminal.push(select.component);
       const _select = await select.response();
       terminal.pop(select.component);
@@ -48,7 +54,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
           terminal.write_buffer();
           const res = await v1.use(token, item);
           text.text = '';
-          if(res.error) notif_section.push_error(res.reason);
+          if (res.error) notif_section.push_error(res.reason);
           else notif_section.push_success(res.message);
           continue main;
         }
