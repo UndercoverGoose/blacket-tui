@@ -120,6 +120,13 @@ export default async function (
       case 2: {
         break;
       }
+      case 3: {
+        const res = await v1.claim(token);
+        if (res.error) notif_section.push(res.reason);
+        else notif_section.push(res.tokens + ' tokens claimed');
+        select.set_disabled_indexes([1, 3, 4]);
+        break;
+      }
     }
   }
   terminal.pop(text, text2, select.component);
