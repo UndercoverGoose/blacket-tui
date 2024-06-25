@@ -71,7 +71,8 @@ export default class Select {
           return true;
         }
         case 'key:enter': {
-          if(this.choices.length === 0) this.selected_index = -1;
+          if (this.choices.length === 0) this.selected_index = -1;
+          if (this.disabled_indexes.includes(this.selected_index)) this.selected_index = -1;
           this.resolve_func?.(this.selected_index);
           this.resolve_func = undefined;
           return true;
