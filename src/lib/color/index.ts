@@ -18,7 +18,10 @@ export default {
   magenta: (...strs: string[]) => ac(35, strs),
   cyan: (...strs: string[]) => ac(36, strs),
   white: (...strs: string[]) => ac(37, strs),
-  hex: (hex: string, ...strs: string[]) => ac(`\x1b[38;2;${parse_hex_ansi(hex)}m`, strs),
+  hex: (hex: string, ...strs: string[]) => {
+    if(hex === 'rainbow') return ac(31, strs);
+    return ac(`\x1b[38;2;${parse_hex_ansi(hex)}m`, strs);
+  },
   bright_black: (...strs: string[]) => ac(90, strs),
   bright_red: (...strs: string[]) => ac(91, strs),
   bright_green: (...strs: string[]) => ac(92, strs),
