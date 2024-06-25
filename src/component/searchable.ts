@@ -21,7 +21,7 @@ type Options = {
 };
 
 export default class Searchable {
-  component = new Text(0, 0, '');
+  component = new Text(0, 0, '', 1, 1, false);
   private question: string;
   private all_choices: string[];
   private visible_choices_indexes: number[];
@@ -84,6 +84,13 @@ export default class Searchable {
 
     this.update_component();
   }
+  set_choices(choices: string[]) {
+    this.all_choices = choices;
+    this.visible_choices_indexes = choices.map((_, i) => i);
+    this.selected_index = 0;
+    this.search_value = '';
+    this.update_component();
+  }
   private move_up() {
     const pseudo_index = this.get_pseduo_index();
     this.selected_index = this.visible_choices_indexes[(pseudo_index - 1 + this.visible_choices_indexes.length) % this.visible_choices_indexes.length];
@@ -131,7 +138,7 @@ export default class Searchable {
       Color.green(Color.underline(this.question + '\n')),
       this.search_value ? Color.yellow(this.search_value) : Color.bright_black(this.placeholder),
       '\n',
-      ...this.all_choices
+      this.all_choices
         .map((choice, index) => [choice, index] as const)
         .filter((_, index) => this.visible_choices_indexes.includes(index))
         .map(([choice, index]) => {
