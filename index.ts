@@ -1,7 +1,7 @@
 import { Terminal, Text } from '@lib/tui';
 import Color from '@lib/color';
-import auth_context from './src/context/auth';
-import main_context from './src/context/main';
+import auth_context from '@ctx/auth';
+import main_context from '@ctx/main';
 import Notification from '@component/notification';
 import v1 from '@lib/api';
 
@@ -16,7 +16,7 @@ const booster_header = new Text(-1, -1, Color.bright_black('No Booster Active'),
 v1.data().then(data => {
   if (data.error) return;
   const booster = data.data.booster;
-  if (!booster) return;
+  if (!booster.active) return;
   booster_header.text = Color.cyan(
     'Booster Active: ',
     Color.bold(booster.multiplier + 'x'),
