@@ -15,3 +15,4 @@ node_modules/
 .temp
 *.temp
 .DS_Store
+dev/
