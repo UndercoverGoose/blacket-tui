@@ -50,12 +50,19 @@ export type Data = {
       top?: true;
     }[];
   };
-  booster: {
-    active: boolean;
-    multiplier: number;
-    time: number;
-    user: number;
-  };
+  booster:
+    | {
+        active: true;
+        multiplier: number;
+        time: number;
+        user: number;
+      }
+    | {
+        active: false;
+        time: 0;
+        multiplier: 0;
+        user: null;
+      };
   credits: {
     nickname: string;
     image: null;
