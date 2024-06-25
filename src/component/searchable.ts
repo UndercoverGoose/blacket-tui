@@ -1,0 +1,145 @@
+import Color from '@lib/color';
+import { Text } from '@lib/tui';
+
+type Options = {
+  /**
+   * The default selected index.
+   */
+  selected_index?: number;
+  /**
+   * The default search value.
+   */
+  search_value?: string;
+  /**
+   * The default placeholder value.
+   */
+  placeholder?: string;
+  /**
+   * The function to filter the choices by.
+   */
+  filter_func?: (s: string, v: string) => boolean;
+};
+
+export default class Searchable {
+  component = new Text(0, 0, '');
+  private question: string;
+  private all_choices: string[];
+  private visible_choices_indexes: number[];
+  private selected_index: number;
+  private search_value: string;
+  private placeholder: string;
+  private filter_func?: (s: string, v: string) => boolean;
+  private resolve_func?: (s: number) => void;
+  /**
+   * Creates a new Searchable select component.
+   * @param question The question to ask or header to display.
+   * @param choices The options to choose from.
+   * @param options Additional customization options.
+   */
+  constructor(question: string, choices: string[], options?: Options) {
+    this.question = question;
+    this.all_choices = choices;
+    this.visible_choices_indexes = choices.map((_, i) => i);
+    this.selected_index = options?.selected_index ?? 0;
+    this.search_value = options?.search_value ?? '';
+    this.placeholder = options?.placeholder ?? 'Search...';
+    this.filter_func = options?.filter_func;
+
+    this.component.process_key = (key: string) => {
+      if (!this.resolve_func) return false;
+      switch (key) {
+        case 'arrow:up': {
+          this.move_up();
+          return true;
+        }
+        case 'arrow:down': {
+          this.move_down();
+          return true;
+        }
+        case 'key:enter': {
+          this.resolve_func?.(this.selected_index);
+          this.resolve_func = undefined;
+          return true;
+        }
+        case 'meta:escape': {
+          this.resolve_func?.(-1);
+          this.resolve_func = undefined;
+          return true;
+        }
+        case 'key:backspace': {
+          this.search_value = this.search_value.slice(0, -1);
+          this.run_filter();
+          this.update_component();
+          return true;
+        }
+        default: {
+          if (key.startsWith('char')) {
+            this.search_value += key.slice(5);
+            this.run_filter();
+            return true;
+          } else return false;
+        }
+      }
+    };
+
+    this.update_component();
+  }
+  private move_up() {
+    const pseudo_index = this.get_pseduo_index();
+    this.selected_index = this.visible_choices_indexes[(pseudo_index - 1 + this.visible_choices_indexes.length) % this.visible_choices_indexes.length];
+    this.update_component();
+  }
+  private move_down() {
+    const pseudo_index = this.get_pseduo_index();
+    this.selected_index = this.visible_choices_indexes[(pseudo_index + 1) % this.visible_choices_indexes.length];
+    this.update_component();
+  }
+  private get_pseduo_index(): number {
+    const pseudo_index = this.visible_choices_indexes.indexOf(this.selected_index);
+    if (pseudo_index === -1) {
+      this.selected_index = this.visible_choices_indexes[0];
+      return -1;
+    }
+    return pseudo_index;
+  }
+  private run_filter() {
+    const new_choices = this.all_choices
+      .map((choice, index) => [choice, index] as const)
+      .filter(([choice, _]) => {
+        if (this.filter_func) return this.filter_func(choice, this.search_value);
+        return choice.toLowerCase().includes(this.search_value.toLowerCase());
+      });
+    this.visible_choices_indexes = new_choices.map(([_, index]) => index);
+    if (!this.visible_choices_indexes.includes(this.selected_index)) {
+      this.move_down();
+    }
+    this.update_component();
+  }
+  /**
+   * Wait for the user to respond to the question. Returns the index of the selected option, or `-1` if the user cancels with escape.
+   */
+  async response(): Promise<number> {
+    return new Promise(resolve => {
+      this.resolve_func = resolve;
+    });
+  }
+  /**
+   * Update the component's text component and trigger a redraw.
+   */
+  private update_component() {
+    this.component.text = Color.join(
+      Color.green(Color.underline(this.question + '\n')),
+      this.search_value ? Color.yellow(this.search_value) : Color.bright_black(this.placeholder),
+      '\n',
+      ...this.all_choices
+        .map((choice, index) => [choice, index] as const)
+        .filter((_, index) => this.visible_choices_indexes.includes(index))
+        .map(([choice, index]) => {
+          if (index === this.selected_index) return Color.inverse(Color.green(choice));
+          return Color.green(choice);
+        })
+        .join('\n')
+    );
+    this.component.attached_terminal?.write_buffer();
+  }
+}
