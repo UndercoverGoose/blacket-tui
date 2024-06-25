@@ -138,6 +138,10 @@ export default async function (
         const friends_map = friends.friends.map(f => f.username);
         console.log(friends_map.length);
         friends_select.set_choices(friends_map);
+        friends_select.mutate_func = (friend_name: string) => {
+          const friend = friends.friends.find(f => f.username === friend_name)!;
+          return Color.hex(friend.color, friend.role, ' ', friend.username);
+        };
         terminal.push(friends_select.component);
         const _select = await friends_select.response();
         terminal.pop(friends_select.component);
