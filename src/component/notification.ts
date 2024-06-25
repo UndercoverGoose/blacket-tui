@@ -12,7 +12,7 @@ export default class Notification {
    * @param duration The duration in milliseconds to display each message for.
    */
   constructor(limit = 10, duration = 10000) {
-    this.component = new Text(-2, -1, '', -1, -1, false);
+    this.component = new Text(-1, -2, '', -1, -1, false);
     this.limit = limit;
     this.duration = duration;
   }

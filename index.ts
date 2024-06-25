@@ -11,8 +11,23 @@ const terminal = new Terminal();
 const version_header = new Text(-1, 0, Color.bright_magenta(`[blacket-tui ~ v${VERSION}]`), 1, -1);
 const username_header = new Text(-1, 1, Color.blink_slow(Color.cyan('Awaiting Authorization')), 1, -1);
 const notif_section = new Notification();
+const booster_header = new Text(-1, -1, Color.bright_black('No Booster Active'), 1, -1);
+
+v1.data().then(data => {
+  if (data.error) return;
+  const booster = data.data.booster;
+  if (!booster) return;
+  booster_header.text = Color.cyan(
+    'Booster Active: ',
+    Color.bold(booster.multiplier + 'x'),
+    ' until ',
+    Color.bold(new Date(booster.time * 1000).toLocaleTimeString())
+  );
+  terminal.write_buffer();
+});
+
 const tokens_header = new Text(-1, 2, '', 1, -1);
-terminal.push(version_header, username_header, tokens_header, notif_section.component);
+terminal.push(version_header, username_header, tokens_header, notif_section.component, booster_header);
 
 const token = await auth_context(terminal, notif_section);
 const _user = await v1.user(token);
