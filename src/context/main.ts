@@ -1,5 +1,5 @@
 import { type Terminal, Text } from '@lib/tui';
-import { Select } from '@component/.';
+import { Select, Notification } from '@component/.';
 import leaderboard from '@ctx/leaderboard';
 import inventory from '@ctx/inventory';
 import market from '@ctx/market';
@@ -30,26 +30,26 @@ const main_select = new Select(
  * @param token The token of the authenticated account
  * @param set_tokens A callback that sets the tokens header value
  */
-export default async function (terminal: Terminal, token: string, set_tokens: (t: number | null, d?: number) => void): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, set_tokens: (t: number | null, d?: number) => void): Promise<void> {
   while (true) {
     terminal.push(main_select.component);
     const _select = await main_select.response();
     terminal.pop(main_select.component);
     switch (_select) {
       case 0: {
-        await statistics(terminal, token, set_tokens);
+        await statistics(terminal, token, notif_section, set_tokens);
         break;
       }
       case 1: {
-        await leaderboard(terminal, token);
+        await leaderboard(terminal, token, notif_section);
         break;
       }
       case 4: {
-        await market(terminal, token, set_tokens);
+        await market(terminal, token, notif_section, set_tokens);
         break;
       }
       case 7: {
-        await inventory(terminal, token);
+        await inventory(terminal, token, notif_section);
         break;
       }
     }

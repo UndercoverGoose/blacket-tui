@@ -1,7 +1,7 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select } from '@component/.';
+import { Select, Notification } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('test', []);
@@ -12,7 +12,12 @@ const select = new Select('test', []);
  * @param token The token of the authenticated account
  * @param set_tokens A callback that sets the tokens header value
  */
-export default async function (terminal: Terminal, token: string, set_tokens: (t: number | null, d?: number) => void): Promise<void> {
+export default async function (
+  terminal: Terminal,
+  token: string,
+  notif_section: Notification,
+  set_tokens: (t: number | null, d?: number) => void
+): Promise<void> {
   text.text = Color.yellow('Fetching blooks...');
   terminal.push(text);
   const _data = await v1.data(true);

@@ -1,6 +1,6 @@
 import Color from '@lib/color';
 import { type Terminal, Text } from '@lib/tui';
-import { Select, Input } from '@component/.';
+import { Select, Input, Notification } from '@component/.';
 import { Dynamic } from '@lib/dynamic';
 import v1 from '@lib/api';
 
@@ -42,7 +42,7 @@ const token = new Input('Enter Token:', {
  * @param terminal Reference to the root terminal
  * @returns The token of the authenticated account
  */
-export default async function (terminal: Terminal): Promise<string> {
+export default async function (terminal: Terminal, notif_section: Notification): Promise<string> {
   main: while (true) {
     terminal.push(select.component);
     select.set_disabled_indexes([Object.keys(Store).length === 0 ? 0 : -1]);
