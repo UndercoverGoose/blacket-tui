@@ -34,6 +34,7 @@ import ping from './ping';
 import user from './user';
 import use from './use';
 import open from './open';
+import buy from './buy';
 
 export default {
   auth_status,
@@ -48,4 +49,5 @@ export default {
   user,
   use,
   open,
+  buy
 };
