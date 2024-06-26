@@ -7,13 +7,14 @@ import type { User } from '@lib/api/src/v1/user';
 type BlookList = (keyof User['blooks'])[];
 
 const text = new Text(0, 0, '');
-const select = new Select(
-  'Select an option:',
-  ['[0] View All Obtained Blooks ', '[1] View Obtained by Pack ', '[2] View Missing Blooks ', '[3] View Missing by Pack ', '[4] View All Blooks '],
-  {
-    disabled_indexes: [1, 3, 4],
-  }
-);
+const select = new Select('Select an option:', [
+  '[0] View All Obtained Blooks ',
+  '[1] View Obtained by Pack ',
+  '[2] View Missing Blooks ',
+  '[3] View Missing by Pack ',
+  '[4] View All Blooks ',
+]);
+const select2 = new Searchable('Select a pack:', []);
 const search = new Searchable('Select a blook:', []);
 
 /**
@@ -70,26 +71,43 @@ export default async function (
         break main;
       }
       case 0: {
-        // View All Obtained Blooks
         await render_blooks(Object.keys(blooks));
         break;
       }
       case 1: {
-        // View Obtained by Pack
+        const packs = Object.keys(data.packs);
+        select2.set_choices(packs);
+        terminal.push(select2.component);
+        const _select2 = await select2.response();
+        terminal.pop(select2.component);
+        if (_select2 === -1) continue main;
+        const pack_name = packs[_select2];
+        const pack_blooks = data.packs[pack_name].blooks;
+        const obtained = pack_blooks.filter(blook_name => blooks[blook_name]);
+        await render_blooks(obtained);
         break;
       }
       case 2: {
         const missing = Object.keys(all_blooks).filter(blook_name => !blooks[blook_name]);
         await render_blooks(missing);
-        // View Missing Blooks
         break;
       }
       case 3: {
         // View Missing by Pack
+        const packs = Object.keys(data.packs);
+        select2.set_choices(packs);
+        terminal.push(select2.component);
+        const _select2 = await select2.response();
+        terminal.pop(select2.component);
+        if (_select2 === -1) continue main;
+        const pack_name = packs[_select2];
+        const pack_blooks = data.packs[pack_name].blooks;
+        const missing = pack_blooks.filter(blook_name => !blooks[blook_name]);
+        await render_blooks(missing);
         break;
       }
       case 4: {
-        // View All Blooks
+        await render_blooks(Object.keys(all_blooks));
         break;
       }
     }
