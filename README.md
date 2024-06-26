@@ -27,5 +27,9 @@ All menus are navigated with the keyboard. Use the arrow keys to navigate up and
   - All missing by pack
   - All blooks
 - Sell and list blooks on the bazaar
+- Viewing bazaar
+  - Manage your own listings
+  - Search for missing blooks
+  - Search for listings by user
 - Viewing inventory
 - Using items
