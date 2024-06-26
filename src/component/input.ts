@@ -53,7 +53,7 @@ export default class Input {
   private invalid_func: Sts;
   private placeholder_func: Sts;
   private mutate: Sts;
-  private is_valid: (s: string) => boolean;
+  is_valid: (s: string) => boolean;
   private resolve_func?: (s: string) => void;
   /**
    * Creates a new Input component.
