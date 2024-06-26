@@ -5,7 +5,7 @@ import { Select, Notification } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('Select an item to view:', []);
-const select2 = new Select('Select an action to perform:', ['[0] Use Item', '[1] List Item']);
+const select2 = new Select('Select an action to perform:', ['[0] Use Item ', '[1] List Item ']);
 
 /**
  * Inventory manager
