@@ -10,7 +10,7 @@ export function can_claim(last_claim_date: Date): boolean {
   const now = Date.now();
   const last = last_claim_date.getTime();
   const reset = get_reset_time(last_claim_date);
-  return reset < now && last < reset;
+  return (reset < now && last < reset) || (now - last > 86400000);
 }
 export function claim_in_ms(last_claim_date: Date): number {
   if (can_claim(last_claim_date)) return 0;
