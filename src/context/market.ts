@@ -19,6 +19,7 @@ const select7 = new Select('', ['[0] No ', '[1] Yes ']);
  * The market context for viewing and purchasing packs
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
+ * @param notif_section The global notification component
  * @param set_tokens A callback that sets the tokens header value
  */
 export default async function (

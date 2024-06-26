@@ -40,6 +40,7 @@ const token = new Input('Enter Token:', {
 /**
  * Authentication manager
  * @param terminal Reference to the root terminal
+ * @param notif_section The global notification component
  * @returns The token of the authenticated account
  */
 export default async function (terminal: Terminal, notif_section: Notification): Promise<string> {

@@ -11,6 +11,7 @@ const select2 = new Select('Select an action to perform:', ['[0] Use Item', '[1]
  * Inventory manager
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
+ * @param notif_section The global notification component
  */
 export default async function (terminal: Terminal, token: string, notif_section: Notification): Promise<void> {
   main_refetch: while (true) {

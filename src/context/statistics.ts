@@ -65,6 +65,7 @@ function set_text_2(user: UserForeign) {
  * The statistics context
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
+ * @param notif_section The global notification component
  * @param set_token A callback that sets the tokens header value
  */
 export default async function (

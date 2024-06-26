@@ -31,6 +31,7 @@ const text2 = new Text(0, 4, '');
  * Blook manager
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
+ * @param notif_section The global notification component
  * @param set_tokens A callback that sets the tokens header value
  */
 export default async function (
