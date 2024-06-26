@@ -59,13 +59,16 @@ type APIResponse =
       user: User | UserForeign;
     };
 
+let cached_data: UserResponse | null = null;
+
 /**
  * Get yourself or another user's information.
  * @param token Auth token.
  * @param user_id The user to get information for. If not provided, it will get the information for the user associated with the token.
  * @returns The user's information if successful, or an error if not.
  */
-export default async function (token: string, user_id: number | string = ''): Promise<UserResponse | FetchError> {
+export default async function (token: string, user_id: number | string = '', use_cache = false): Promise<UserResponse | FetchError> {
+  if (use_cache && cached_data && !user_id) return cached_data;
   const res = await fetch(`https://blacket.org/worker2/user/${user_id}`, {
     headers: AUTH_HEADERS(token),
     method: 'GET',
@@ -81,11 +84,12 @@ export default async function (token: string, user_id: number | string = ''): Pr
           user: json.user as UserForeign,
         };
       }
-      return {
+      cached_data = {
         error: false,
         is_foreign: false,
         user: json.user as User,
       };
+      return cached_data;
     }
     default: {
       return {
