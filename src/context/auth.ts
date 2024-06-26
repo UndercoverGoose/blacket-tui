@@ -59,7 +59,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
           else lo_text.text = text;
           terminal.write_buffer();
         }
-        auth: while (true) {
+        auth2: while (true) {
           const _select2 = await select2.response();
           terminal.pop(select2.component);
           if (_select2 === -1) continue main;
@@ -70,7 +70,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
               const res = await v1.login(account.username, account.password);
               if (res.error) {
                 set_text(Color.red(`Failed to validate credentials: ${res.reason}`), true);
-                break auth;
+                break auth2;
               }
               const _token = res.token;
               set_text(Color.green('Logged in successfully.'), true);
@@ -82,7 +82,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
               const state = await v1.auth_status(account.token);
               if (state.error) {
                 set_text(Color.red(`Failed to validate token: ${state.reason}`), true);
-                break auth;
+                break auth2;
               }
               break;
             }

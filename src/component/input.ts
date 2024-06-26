@@ -132,7 +132,7 @@ export default class Input {
    * Update the component's text component and trigger a redraw.
    */
   private update_component() {
-    const default_func = !!this.resolve_func ? Color.inverse : Color.join;
+    const default_func = this.resolve_func ? Color.inverse : Color.join;
     const is_valid = this.is_valid(this.value);
     const validity_func = is_valid ? this.valid_func : this.invalid_func;
     this.component.text = default_func(

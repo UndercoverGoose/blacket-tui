@@ -113,71 +113,68 @@ export default async function (
                 let run = true;
                 const results: { [key: string]: number } = {};
                 terminal.push(select6.component);
-                await new Promise(async r => {
-                  select6.response().then(_select6 => {
-                    run = false;
-                    return r(0);
-                  });
-                  auto_open: while (run) {
-                    const res = await v1.open(token, pack_name);
-                    if (res.error) {
-                      notif_section.push_error(res.reason);
-                      continue;
-                    }
-
-                    const blook_info = all_blooks[res.blook];
-                    if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
-                    else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
-
-                    opened++;
-                    tokens_spent += pack_info.price;
-                    set_tokens(null, pack_info.price);
-                    results[res.blook] = (results[res.blook] ?? 0) + 1;
-                    last_blook = res.blook;
-                    const value = Object.entries(results)
-                      .map(([blook_name, count]) => {
-                        return all_blooks[blook_name].price * count;
-                      })
-                      .reduce((a, b) => a + b, 0);
-                    select6.set_question(
-                      Color.join(
-                        Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
-                        '\n',
-                        Color.yellow(
-                          Color.underline('Opened'),
-                          ': ',
-                          Color.bold(opened.toLocaleString()),
-                          '\n',
-                          Color.underline('Tokens spent'),
-                          ': ',
-                          Color.bold(tokens_spent.toLocaleString()),
-                          '\n',
-                          Color.underline('Instant value'),
-                          ': ',
-                          Color.bold(value.toLocaleString()),
-                          ' ',
-                          value >= tokens_spent
-                            ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
-                            : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
-                          '\nUnlocks:\n'
-                        ),
-                        Object.entries(results)
-                          .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
-                          .sort((a, b) => {
-                            return a[2].chance - b[2].chance;
-                          })
-                          .map(([blook, count, blook_info]) => {
-                            const hex = rarity_color(blook_info?.rarity);
-                            const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')}`;
-                            if (last_blook === blook) return Color.bold(text);
-                            return text;
-                          })
-                          .join('\n')
-                      )
-                    );
-                    terminal.write_buffer();
-                  }
+                select6.response().then(_select6 => {
+                  run = false;
                 });
+                while (run) {
+                  const res = await v1.open(token, pack_name);
+                  if (res.error) {
+                    notif_section.push_error(res.reason);
+                    continue;
+                  }
+
+                  const blook_info = all_blooks[res.blook];
+                  if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
+                  else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
+
+                  opened++;
+                  tokens_spent += pack_info.price;
+                  set_tokens(null, pack_info.price);
+                  results[res.blook] = (results[res.blook] ?? 0) + 1;
+                  last_blook = res.blook;
+                  const value = Object.entries(results)
+                    .map(([blook_name, count]) => {
+                      return all_blooks[blook_name].price * count;
+                    })
+                    .reduce((a, b) => a + b, 0);
+                  select6.set_question(
+                    Color.join(
+                      Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
+                      '\n',
+                      Color.yellow(
+                        Color.underline('Opened'),
+                        ': ',
+                        Color.bold(opened.toLocaleString()),
+                        '\n',
+                        Color.underline('Tokens spent'),
+                        ': ',
+                        Color.bold(tokens_spent.toLocaleString()),
+                        '\n',
+                        Color.underline('Instant value'),
+                        ': ',
+                        Color.bold(value.toLocaleString()),
+                        ' ',
+                        value >= tokens_spent
+                          ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
+                          : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
+                        '\nUnlocks:\n'
+                      ),
+                      Object.entries(results)
+                        .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
+                        .sort((a, b) => {
+                          return a[2].chance - b[2].chance;
+                        })
+                        .map(([blook, count, blook_info]) => {
+                          const hex = rarity_color(blook_info?.rarity);
+                          const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')}`;
+                          if (last_blook === blook) return Color.bold(text);
+                          return text;
+                        })
+                        .join('\n')
+                    )
+                  );
+                  terminal.write_buffer();
+                }
                 terminal.pop(select6.component);
                 break;
               }

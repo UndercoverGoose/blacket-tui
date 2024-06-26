@@ -125,7 +125,7 @@ export class BufferWrapper implements Component {
    * Creates an empty buffer.
    */
   private create_empty_buffer(): string[] {
-    return new Array(this.columns * this.rows).fill(' ');
+    return Array.from({ length: this.columns * this.rows }).fill(' ') as string[];
   }
   /**
    * Returns the number of columns in the buffer (default: terminal columns).
