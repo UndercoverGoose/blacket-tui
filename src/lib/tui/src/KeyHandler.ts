@@ -1,4 +1,4 @@
-export function handleKey(text: string): string {
+export function handle_key(text: string): string {
   const codes = text.split('').map(c => c.charCodeAt(0));
   const str = codes.join('-');
   switch (str) {

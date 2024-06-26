@@ -1,6 +1,6 @@
 import type { Component } from './src/component';
 import { BufferWrapper } from './src/component/BufferWrapper';
-import { handleKey } from './src/KeyHandler';
+import { handle_key } from './src/KeyHandler';
 
 /**
  * Global wrapper for the terminal.
@@ -8,11 +8,11 @@ import { handleKey } from './src/KeyHandler';
 export class Terminal extends BufferWrapper {
   constructor() {
     super();
-    this.hideCursor();
+    this.hide_cursor();
     process.stdin.setRawMode(true);
     process.stdin.setEncoding('utf8');
     process.stdin.resume();
-    process.stdin.on('data', (text: string) => this.keyHandler(text));
+    process.stdin.on('data', (text: string) => this.key_handler(text));
     process.stdout.on('resize', () => {
       process.stdout.write('\x1b[2J');
       this.write_buffer();
@@ -20,20 +20,20 @@ export class Terminal extends BufferWrapper {
     this.write_buffer();
   }
 
-  showCursor() {
+  show_cursor() {
     process.stdout.write('\x1b[?25h');
   }
-  hideCursor() {
+  hide_cursor() {
     process.stdout.write('\x1b[?25l');
   }
   cursorTo(x: number, y: number) {
     process.stdout.write(`\x1b[${y};${x}H`);
   }
 
-  private keyHandler(text: string) {
-    const key = handleKey(text);
+  private key_handler(text: string) {
+    const key = handle_key(text);
     if (key === 'meta:quit') {
-      this.showCursor();
+      this.show_cursor();
       process.stdout.write(`\x1b[H\x1b[31mProcess killed by user.\x1b[0m`);
       process.exit(0);
     }
