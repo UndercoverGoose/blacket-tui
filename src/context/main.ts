@@ -5,6 +5,7 @@ import inventory from '@ctx/inventory';
 import market from '@ctx/market';
 import statistics from '@ctx/statistics';
 import blooks from '@ctx/blooks';
+import bazaar from '@ctx/bazaar';
 
 const main_select = new Select(
   'Select a page to view:',
@@ -21,7 +22,7 @@ const main_select = new Select(
     '[9] News ',
   ],
   {
-    disabled_indexes: [2, 3, 6, 8, 9],
+    disabled_indexes: [2, 3, 8, 9],
   }
 );
 
@@ -50,6 +51,10 @@ export default async function (terminal: Terminal, token: string, notif_section:
       }
       case 5: {
         await blooks(terminal, token, notif_section, tokens);
+        break;
+      }
+      case 6: {
+        await bazaar(terminal, token, notif_section, tokens);
         break;
       }
       case 7: {
