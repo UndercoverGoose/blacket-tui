@@ -1,7 +1,7 @@
 {
   "name": "blacket-tui",
   "description": "A custom TUI to interact with Blacket's API",
-  "version": "0.6.1",
+  "version": "0.6.2-beta1",
   "module": "index.ts",
   "type": "module",
   "scripts": {

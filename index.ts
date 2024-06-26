@@ -5,7 +5,7 @@ import main_context from '@ctx/main';
 import Notification from '@component/notification';
 import v1 from '@lib/api';
 
-const VERSION = '0.6.1';
+const VERSION = '0.6.2-beta1';
 
 const terminal = new Terminal();
 const version_header = new Text(-1, 0, Color.bright_magenta(`[blacket-tui ~ v${VERSION}]`), 1, -1);
