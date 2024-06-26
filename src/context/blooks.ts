@@ -69,17 +69,13 @@ export default async function (
     });
     search.set_choices(mapped);
     main: while (true) {
-      terminal.push(search.component);
-      const selected_blook = await search.response();
-      terminal.pop(search.component);
+      const selected_blook = await search.response_bind(terminal);
       if (selected_blook === -1) break main;
       const blook_name = mapped[selected_blook];
       select3.set_question(`Select an option to perform on ${Color.bold(blook_name)}:`);
       sub: while (true) {
         if (blooks[blook_name] === 0) break;
-        terminal.push(select3.component);
-        const _select3 = await select3.response();
-        terminal.pop(select3.component);
+        const _select3 = await select3.response_bind(terminal);
         switch (_select3) {
           case -1: {
             break sub;
@@ -103,9 +99,9 @@ export default async function (
               else text2.text += Color.yellow(`\nCheapest listing on the bazaar: ${Color.bold('' + cheapest.price)} tokens.`);
               terminal.write_buffer();
             });
-            terminal.push(input.component, text2);
-            const amount = await input.response();
-            terminal.pop(input.component, text2);
+            terminal.push(text2);
+            const amount = await input.response_bind(terminal);
+            terminal.pop(text2);
             if (amount === '') break;
             const tokens = Number(amount.replaceAll(',', ''));
             if (!input.is_valid(amount) || isNaN(tokens)) {
@@ -132,9 +128,9 @@ export default async function (
               Color.yellow(`This blook can be instant sold for ${Color.bold('' + all_blooks[blook_name].price)} tokens.\n`),
               Color.yellow(`You currently have ${Color.bold('' + blooks[blook_name])} of this blook.`)
             );
-            terminal.push(input.component, text2);
-            const amount = await input.response();
-            terminal.pop(input.component, text2);
+            terminal.push(text2);
+            const amount = await input.response_bind(terminal);
+            terminal.pop(text2);
             if (amount === '') break;
             const quantity = Number(amount.replaceAll(',', ''));
             if (!input.is_valid(amount) || isNaN(quantity)) {
@@ -158,9 +154,7 @@ export default async function (
     // input
   }
   main: while (true) {
-    terminal.push(select.component);
-    const _select = await select.response();
-    terminal.pop(select.component);
+    const _select = await select.response_bind(terminal);
     switch (_select) {
       case -1: {
         break main;
@@ -172,9 +166,7 @@ export default async function (
       case 1: {
         const packs = Object.keys(data.packs);
         select2.set_choices(packs);
-        terminal.push(select2.component);
-        const _select2 = await select2.response();
-        terminal.pop(select2.component);
+        const _select2 = await select2.response_bind(terminal);
         if (_select2 === -1) continue main;
         const pack_name = packs[_select2];
         const pack_blooks = data.packs[pack_name].blooks;

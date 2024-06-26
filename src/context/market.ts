@@ -52,9 +52,7 @@ export default async function (
 
   text.text = '';
   main: while (true) {
-    terminal.push(select.component);
-    const _select = await select.response();
-    terminal.pop(select.component);
+    const _select = await select.response_bind(terminal);
     switch (_select) {
       case -1: {
         break main;
@@ -63,17 +61,13 @@ export default async function (
         const packs_map = Object.entries(packs);
         select2.set_choices(packs_map.map(([k, v]) => `${k} - ${v.price} tokens `));
         pack: while (true) {
-          terminal.push(select2.component);
-          const _select2 = await select2.response();
-          terminal.pop(select2.component);
+          const _select2 = await select2.response_bind(terminal);
           if (_select2 === -1) continue main;
           const [pack_name, pack_info] = packs_map[_select2];
           select3.set_question(`Select an option to perform on ${Color.bold(pack_name + ' - ' + pack_info.price + ' tokens')}:`);
           while (true) {
             select3.set_selected_index(0);
-            terminal.push(select3.component);
-            const _select3 = await select3.response();
-            terminal.pop(select3.component);
+            const _select3 = await select3.response_bind(terminal);
             if (_select3 === -1) continue pack;
             switch (_select3) {
               case 0: {
@@ -86,9 +80,7 @@ export default async function (
                 select4.set_options([...blooks, '[0] Back ']);
                 select4.set_disabled_indexes(blooks.map((_, idx) => idx));
                 select4.set_selected_index(blooks.length);
-                terminal.push(select4.component);
-                await select4.response();
-                terminal.pop(select4.component);
+                await select4.response_bind(terminal);
                 break;
               }
               case 1: {
@@ -186,16 +178,12 @@ export default async function (
         const items_map = Object.entries(items);
         select5.set_options(items_map.map(([k, v], idx) => `[${idx}] ${k} - ${v.price.toLocaleString()} tokens `));
         shop: while (true) {
-          terminal.push(select5.component);
-          const _select5 = await select5.response();
-          terminal.pop(select5.component);
+          const _select5 = await select5.response_bind(terminal);
           if (_select5 === -1) break shop;
           const [item_name, item_info] = items_map[_select5];
           select7.set_question(`Are you sure you want to purchase ${Color.bold(item_name)} for ${Color.bold(item_info.price.toLocaleString())} tokens?`);
           select7.set_selected_index(0);
-          terminal.push(select7.component);
-          const _select7 = await select7.response();
-          terminal.pop(select7.component);
+          const _select7 = await select7.response_bind(terminal);
           switch (_select7) {
             case -1:
             case 0: {

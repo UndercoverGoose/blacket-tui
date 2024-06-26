@@ -103,18 +103,15 @@ export default async function (
   }
 
   main: while (true) {
-    terminal.push(select.component, text2);
-    const _select = await select.response();
-    terminal.pop(select.component);
+    terminal.push(text2);
+    const _select = await select.response_bind(terminal);
     switch (_select) {
       case -1: {
         break main;
       }
       case 0: {
         input.set_value('');
-        terminal.push(input.component);
-        const _input = await input.response();
-        terminal.pop(input.component);
+        const _input = await input.response_bind(terminal);
         if (_input === '') break;
         const res2 = await v1.user(token, _input);
         if (res2.error) {
@@ -142,9 +139,7 @@ export default async function (
           const friend = friends.friends.find(f => f.username === friend_name)!;
           return Color.hex(friend.color, friend.role, ' ', friend.username);
         };
-        terminal.push(friends_select.component);
-        const _select = await friends_select.response();
-        terminal.pop(friends_select.component);
+        const _select = await friends_select.response_bind(terminal);
         if (_select === -1) break;
         const selected_friend = friends.friends[_select];
         select2.set_question(

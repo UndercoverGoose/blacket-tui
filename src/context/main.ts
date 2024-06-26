@@ -38,9 +38,7 @@ export default async function (
   set_tokens: (t: number | null, d?: number) => void
 ): Promise<void> {
   while (true) {
-    terminal.push(main_select.component);
-    const _select = await main_select.response();
-    terminal.pop(main_select.component);
+    const _select = await main_select.response_bind(terminal);
     switch (_select) {
       case 0: {
         await statistics(terminal, token, notif_section, set_tokens);

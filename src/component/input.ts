@@ -1,5 +1,5 @@
 import Color from '@lib/color';
-import { Text } from '@lib/tui';
+import { Terminal, Text } from '@lib/tui';
 
 type Sts = (s: string) => string;
 
@@ -127,6 +127,15 @@ export default class Input {
       this.resolve_func = resolve;
       this.update_component();
     });
+  }
+  /**
+   * Wait for the user to respond to the question. Returns the internal value of the input or `''` if the user pressed escape. This method automatically binds the component to the terminal and removes it afterwards.
+   */
+  async response_bind(terminal: Terminal): Promise<string> {
+    terminal.push(this.component);
+    const res = await this.response();
+    terminal.pop(this.component);
+    return res;
   }
   /**
    * Update the component's text component and trigger a redraw.

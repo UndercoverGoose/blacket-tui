@@ -37,15 +37,11 @@ export default async function (terminal: Terminal, token: string, notif_section:
         select.set_options([Color.bright_black('No items in inventory.')]);
         select.set_disabled_indexes([0]);
       }
-      terminal.push(select.component);
-      const _select = await select.response();
-      terminal.pop(select.component);
+      const _select = await select.response_bind(terminal);
       if (_select === -1) break main_refetch;
       const item = options[_select][0];
       select2.set_question(`Select an action to perform on ${Color.bold(item)}:`);
-      terminal.push(select2.component);
-      const _select2 = await select2.response();
-      terminal.pop(select2.component);
+      const _select2 = await select2.response_bind(terminal);
       switch (_select2) {
         case -1:
           continue main;
