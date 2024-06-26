@@ -35,6 +35,7 @@ import user from './user';
 import use from './use';
 import open from './open';
 import buy from './buy';
+import list from './list';
 
 export default {
   auth_status,
@@ -49,5 +50,6 @@ export default {
   user,
   use,
   open,
-  buy
+  buy,
+  list,
 };
