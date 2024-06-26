@@ -1,7 +1,7 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Input, Notification, Searchable } from '@component/.';
+import { Select, Input, Notification, Searchable, Tokens } from '@component/.';
 import { can_claim, claim_in_formatted } from '@util/claim';
 import type { UserForeign } from '@lib/api/src/v1/user';
 import type { Data } from '@lib/api/src/v1/data';
@@ -66,14 +66,9 @@ function set_text_2(user: UserForeign) {
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
  * @param notif_section The global notification component
- * @param set_token A callback that sets the tokens header value
+ * @param tokens The global tokens component
  */
-export default async function (
-  terminal: Terminal,
-  token: string,
-  notif_section: Notification,
-  set_tokens: (t: number | null, d?: number) => void
-): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
   text.text = Color.yellow('Fetching statistics...');
   terminal.push(text);
   const res = await v1.user(token);

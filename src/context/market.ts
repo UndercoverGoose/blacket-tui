@@ -1,7 +1,7 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Notification, Searchable } from '@component/.';
+import { Select, Notification, Searchable, Tokens } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('Select a page to view:', ['[0] Packs ', '[1] Items & Weekly Shop ']);
@@ -20,14 +20,9 @@ const select7 = new Select('', ['[0] No ', '[1] Yes ']);
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
  * @param notif_section The global notification component
- * @param set_tokens A callback that sets the tokens header value
+ * @param tokens The global tokens component
  */
-export default async function (
-  terminal: Terminal,
-  token: string,
-  notif_section: Notification,
-  set_tokens: (t: number | null, d?: number) => void
-): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
   text.text = Color.yellow('Fetching market...');
   terminal.push(text);
   const _data = await v1.data(true);
@@ -93,7 +88,7 @@ export default async function (
                   notif_section.push_error(res.reason);
                   break;
                 }
-                set_tokens(null, pack_info.price);
+                tokens.remove_tokens(pack_info.price);
                 const blook_info = all_blooks[res.blook];
                 if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
                 else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
@@ -122,7 +117,7 @@ export default async function (
 
                   opened++;
                   tokens_spent += pack_info.price;
-                  set_tokens(null, pack_info.price);
+                  tokens.remove_tokens(pack_info.price);
                   results[res.blook] = (results[res.blook] ?? 0) + 1;
                   last_blook = res.blook;
                   const value = Object.entries(results)

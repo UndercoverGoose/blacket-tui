@@ -1,5 +1,5 @@
 import { type Terminal, Text } from '@lib/tui';
-import { Select, Notification } from '@component/.';
+import { Select, Notification, Tokens } from '@component/.';
 import leaderboard from '@ctx/leaderboard';
 import inventory from '@ctx/inventory';
 import market from '@ctx/market';
@@ -30,19 +30,14 @@ const main_select = new Select(
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
  * @param notif_section The global notification component
- * @param set_tokens A callback that sets the tokens header value
+ * @param tokens The global tokens component
  */
-export default async function (
-  terminal: Terminal,
-  token: string,
-  notif_section: Notification,
-  set_tokens: (t: number | null, d?: number) => void
-): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
   while (true) {
     const _select = await main_select.response_bind(terminal);
     switch (_select) {
       case 0: {
-        await statistics(terminal, token, notif_section, set_tokens);
+        await statistics(terminal, token, notif_section, tokens);
         break;
       }
       case 1: {
@@ -50,15 +45,15 @@ export default async function (
         break;
       }
       case 4: {
-        await market(terminal, token, notif_section, set_tokens);
+        await market(terminal, token, notif_section, tokens);
         break;
       }
       case 5: {
-        await blooks(terminal, token, notif_section, set_tokens);
+        await blooks(terminal, token, notif_section, tokens);
         break;
       }
       case 7: {
-        await inventory(terminal, token, notif_section);
+        await inventory(terminal, token, notif_section, tokens);
         break;
       }
     }

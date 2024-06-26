@@ -1,7 +1,7 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Notification } from '@component/.';
+import { Select, Notification, Tokens } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('Select an item to view:', []);
@@ -12,8 +12,9 @@ const select2 = new Select('Select an action to perform:', ['[0] Use Item ', '[1
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
  * @param notif_section The global notification component
+ * @param tokens The global tokens component
  */
-export default async function (terminal: Terminal, token: string, notif_section: Notification): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
   main_refetch: while (true) {
     text.text = Color.yellow('Fetching inventory...');
     terminal.push(text);

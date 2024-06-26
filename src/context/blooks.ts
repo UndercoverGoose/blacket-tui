@@ -1,7 +1,7 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Input, Notification, Searchable, Select } from '@component/.';
+import { Input, Notification, Searchable, Select, Tokens } from '@component/.';
 import type { User } from '@lib/api/src/v1/user';
 
 type BlookList = (keyof User['blooks'])[];
@@ -32,14 +32,9 @@ const text2 = new Text(0, 4, '');
  * @param terminal Reference to the root terminal
  * @param token The token of the authenticated account
  * @param notif_section The global notification component
- * @param set_tokens A callback that sets the tokens header value
+ * @param tokens The global tokens component
  */
-export default async function (
-  terminal: Terminal,
-  token: string,
-  notif_section: Notification,
-  set_tokens: (t: number | null, d?: number) => void
-): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
   text.text = Color.yellow('Fetching blooks...');
   terminal.push(text);
   const _data = await v1.data(true);
@@ -116,6 +111,7 @@ export default async function (
             }
             notif_section.push_success(`Successfully listed ${Color.bold(blook_name)} for ${Color.bold('' + tokens)} tokens.`);
             blooks[blook_name] -= 1;
+            break;
           }
           case 1: {
             _input_mutate_multi = all_blooks[blook_name].price;
