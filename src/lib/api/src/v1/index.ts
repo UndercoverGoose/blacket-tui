@@ -35,6 +35,8 @@ import user from './user';
 import use from './use';
 import open from './open';
 import buy from './buy';
+import bazaar_buy from './bazaar_buy';
+import bazaar_remove from './bazaar_remove';
 import list from './list';
 import sell from './sell';
 
@@ -52,6 +54,8 @@ export default {
   use,
   open,
   buy,
+  bazaar_buy,
+  bazaar_remove,
   list,
   sell,
 };

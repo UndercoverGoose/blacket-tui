@@ -1,6 +1,6 @@
 import { AUTH_HEADERS, type FetchError } from '.';
 
-type BazaarItem = {
+export type BazaarItem = {
   id: number;
   item: string;
   price: number;
