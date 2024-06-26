@@ -162,6 +162,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
                     )
                   );
                   terminal.write_buffer();
+                  await new Promise(r => setTimeout(r, data.rarities[all_blooks[res.blook].rarity].wait ?? 0));
                 }
                 terminal.pop(select6.component);
                 break;

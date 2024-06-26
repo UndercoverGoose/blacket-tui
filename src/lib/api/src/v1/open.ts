@@ -9,7 +9,7 @@ type APIResponse =
       new?: true;
     };
 
-const limit = new RateLimiter(777, true);
+const limit = new RateLimiter(750, true);
 
 export default async function (token: string, pack_name: string): Promise<APIResponse> {
   await limit.wait();
