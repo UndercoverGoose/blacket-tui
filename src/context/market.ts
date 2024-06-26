@@ -1,11 +1,11 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Notification } from '@component/.';
+import { Select, Notification, Searchable } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('Select a page to view:', ['[0] Packs ', '[1] Items & Weekly Shop ']);
-const select2 = new Select('Select a pack to view:', []);
+const select2 = new Searchable('Select a pack to view:', []);
 select2.component.v_wrap = false;
 const select3 = new Select('Select an option to perform:', ['[0] View Blooks ', '[1] Purchase Pack ', '[2] Purchase Pack in Bulk ']);
 const select4 = new Select('Blooks:', []);
@@ -61,7 +61,7 @@ export default async function (
       }
       case 0: {
         const packs_map = Object.entries(packs);
-        select2.set_options(packs_map.map(([k, v], idx) => `[${idx}] ${k} - ${v.price} tokens `));
+        select2.set_choices(packs_map.map(([k, v]) => `${k} - ${v.price} tokens `));
         pack: while (true) {
           terminal.push(select2.component);
           const _select2 = await select2.response();
