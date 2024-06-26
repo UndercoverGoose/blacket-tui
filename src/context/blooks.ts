@@ -1,7 +1,7 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Notification, Searchable, Select } from '@component/.';
+import { Input, Notification, Searchable, Select } from '@component/.';
 import type { User } from '@lib/api/src/v1/user';
 
 type BlookList = (keyof User['blooks'])[];
@@ -16,6 +16,16 @@ const select = new Select('Select an option:', [
 ]);
 const select2 = new Searchable('Select a pack:', []);
 const search = new Searchable('Select a blook:', []);
+const select3 = new Select('', ['[0] List Blook ', '[1] Sell Blook ']);
+let _input_mutate_multi = 1;
+const input = new Input('Enter the amount to sell:', {
+  default_value: '1',
+  valid_func: Color.green,
+  invalid_func: Color.red,
+  mutate: (v: string) =>
+    ` ${v} ` + Color.reset(Color.bright_black(' = ', Color.yellow((Number(v.replaceAll(',', '')) * _input_mutate_multi).toLocaleString(), ' tokens'), ' ')),
+});
+const text2 = new Text(0, 4, '');
 
 /**
  * Blook manager
@@ -53,14 +63,99 @@ export default async function (
     if (!rarity_info) return '#ffffff';
     return rarity_info.color;
   }
-  async function render_blooks(blooks: BlookList) {
-    const mapped = blooks.map(blook_name => {
+  async function render_blooks(_blooks: BlookList) {
+    const mapped = _blooks.map(blook_name => {
       return blook_name;
     });
     search.set_choices(mapped);
-    terminal.push(search.component);
-    await search.response();
-    terminal.pop(search.component);
+    main: while (true) {
+      terminal.push(search.component);
+      const selected_blook = await search.response();
+      terminal.pop(search.component);
+      if (selected_blook === -1) break main;
+      const blook_name = mapped[selected_blook];
+      select3.set_question(`Select an option to perform on ${Color.bold(blook_name)}:`);
+      sub: while (true) {
+        if (blooks[blook_name] === 0) break;
+        terminal.push(select3.component);
+        const _select3 = await select3.response();
+        terminal.pop(select3.component);
+        switch (_select3) {
+          case -1: {
+            break sub;
+          }
+          case 0: {
+            _input_mutate_multi = 1;
+            input.set_question(`Enter the price to sell ${Color.bold(blook_name)} at:`);
+            input.set_value('');
+            input.is_valid = (amount: string) => {
+              const num = Number(amount.replaceAll(',', ''));
+              return !(isNaN(num) || num.toString().includes('.') || num <= 0 || num >= 1e9);
+            };
+            text2.text = Color.join(
+              Color.yellow(`This blook can be instant sold for ${Color.bold('' + all_blooks[blook_name].price)} tokens.\n`),
+              Color.yellow(`You currently have ${Color.bold('' + blooks[blook_name])} of this blook.`)
+            );
+            v1.bazaar(token, blook_name).then(res => {
+              if (res.error) return notif_section.push_error(res.reason);
+              const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
+              if (!cheapest) text2.text += Color.yellow('\nNo listing found on the bazaar.');
+              else text2.text += Color.yellow(`\nCheapest listing on the bazaar: ${Color.bold('' + cheapest.price)} tokens.`);
+              terminal.write_buffer();
+            });
+            terminal.push(input.component, text2);
+            const amount = await input.response();
+            terminal.pop(input.component, text2);
+            if (amount === '') break;
+            const tokens = Number(amount.replaceAll(',', ''));
+            if (!input.is_valid(amount) || isNaN(tokens)) {
+              notif_section.push_error('Invalid amount of tokens entered.');
+              break;
+            }
+            const list = await v1.list(token, blook_name, tokens);
+            if (list.error) {
+              notif_section.push_error(list.reason);
+              break;
+            }
+            notif_section.push_success(`Successfully listed ${Color.bold(blook_name)} for ${Color.bold('' + tokens)} tokens.`);
+            blooks[blook_name] -= 1;
+          }
+          case 1: {
+            _input_mutate_multi = all_blooks[blook_name].price;
+            input.set_question(`Enter the amount of ${Color.bold(blook_name)} to sell:`);
+            input.set_value('');
+            input.is_valid = (amount: string) => {
+              const num = Number(amount.replaceAll(',', ''));
+              return !(isNaN(num) || num.toString().includes('.') || num <= 0 || num > blooks[blook_name]);
+            };
+            text2.text = Color.join(
+              Color.yellow(`This blook can be instant sold for ${Color.bold('' + all_blooks[blook_name].price)} tokens.\n`),
+              Color.yellow(`You currently have ${Color.bold('' + blooks[blook_name])} of this blook.`)
+            );
+            terminal.push(input.component, text2);
+            const amount = await input.response();
+            terminal.pop(input.component, text2);
+            if (amount === '') break;
+            const quantity = Number(amount.replaceAll(',', ''));
+            if (!input.is_valid(amount) || isNaN(quantity)) {
+              notif_section.push_error('Invalid amount of blooks entered.');
+              break;
+            }
+            const sell = await v1.sell(token, blook_name, quantity);
+            if (sell.error) {
+              notif_section.push_error(sell.reason);
+              break;
+            }
+            notif_section.push_success(
+              `Successfully sold ${Color.bold('' + quantity)} ${Color.bold(blook_name)} for ${Color.bold('' + quantity * all_blooks[blook_name].price)} tokens.`
+            );
+            blooks[blook_name] -= quantity;
+          }
+        }
+      }
+    }
+    // text2
+    // input
   }
   main: while (true) {
     terminal.push(select.component);
