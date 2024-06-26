@@ -1,11 +1,14 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Notification, Tokens } from '@component/.';
+import { Select, Notification, Tokens, Input } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('Select an item to view:', []);
 const select2 = new Select('Select an action to perform:', ['[0] Use Item ', '[1] List Item ']);
+const input = new Input('Enter the price to list at:', {
+  mutate: (v: string) => ` ${v} ` + Color.reset(Color.bright_black(' = '), Color.yellow(Number(v.replaceAll(',', '')).toLocaleString(), ' tokens')),
+});
 
 /**
  * Inventory manager
@@ -54,6 +57,29 @@ export default async function (terminal: Terminal, token: string, notif_section:
           text.text = '';
           if (res.error) notif_section.push_error(res.reason);
           else notif_section.push_success(res.message);
+          continue main;
+        }
+        case 1: {
+          input.set_question(`Enter the price to sell ${Color.bold(item)} at:`);
+          input.set_value('');
+          input.is_valid = (amount: string) => {
+            const num = Number(amount.replaceAll(',', ''));
+            return !(isNaN(num) || num.toString().includes('.') || num <= 0 || num >= 1e9);
+          };
+          const amount = await input.response_bind(terminal);
+          if (amount === '') break;
+          const tokens = Number(amount.replaceAll(',', ''));
+          if (!input.is_valid(amount) || isNaN(tokens)) {
+            notif_section.push_error('Invalid amount of tokens entered.');
+            break;
+          }
+          text.text = Color.yellow('Listing item...');
+          terminal.write_buffer();
+          const res = await v1.list(token, item, tokens);
+          text.text = '';
+          if (res.error) notif_section.push_error(res.reason);
+          else notif_section.push_success(`Successfully listed ${Color.bold(item)} for ${Color.bold('' + tokens)} tokens.`);
+          inventory_mapped[item] -= 1;
           continue main;
         }
       }
