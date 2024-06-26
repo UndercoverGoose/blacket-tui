@@ -142,6 +142,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
             notif_section.push_success(
               `Successfully sold ${Color.bold('' + quantity)} ${Color.bold(blook_name)} for ${Color.bold('' + quantity * all_blooks[blook_name].price)} tokens.`
             );
+            tokens.add_tokens(quantity * all_blooks[blook_name].price);
             blooks[blook_name] -= quantity;
           }
         }
