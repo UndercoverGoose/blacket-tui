@@ -2,7 +2,7 @@ import Color from '@lib/color';
 import { Text } from '@lib/tui';
 
 export default class Tokens {
-  component = new Text(-1, -2, '', -1, -1, false);
+  component = new Text(-1, 2, '', 1, -1);
   private tokens: number;
   /**
    * Creates a tokens component. Only one instance should be created, otherwise they will overlap when rendering.
