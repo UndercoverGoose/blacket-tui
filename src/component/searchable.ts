@@ -63,6 +63,7 @@ export default class Searchable {
           return true;
         }
         case 'key:enter': {
+          if(this.visible_choices_indexes.length === 0) this.selected_index = -1;
           this.resolve_func?.(this.selected_index);
           this.resolve_func = undefined;
           return true;
