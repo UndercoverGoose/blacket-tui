@@ -32,4 +32,5 @@ All menus are navigated with the keyboard. Use the arrow keys to navigate up and
   - Search for missing blooks
   - Search for listings by user
 - Viewing inventory
+  - Listing items
 - Using items
