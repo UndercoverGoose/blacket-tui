@@ -84,7 +84,8 @@ export default async function (terminal: Terminal, notif_section: Notification):
                 set_text(Color.red(`Failed to validate token: ${state.reason}`), true);
                 break auth2;
               }
-              break;
+              terminal.pop(lo_text);
+              return account.token;
             }
           }
         }
@@ -136,7 +137,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
         let success = false;
         while (!success) {
           token.set_value('');
-          const _token = await token.response(); //! add validation to component
+          const _token = await token.response();
           if (_token === '') break;
           const res = await v1.auth_status(_token);
           if (res.error) {
@@ -160,7 +161,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
           };
           notif_section.push_success(`Saved credentials for ${Color.italic(user.user.username)}`);
         }
-        terminal.pop(token.component);
+        terminal.pop(token.component, up_text);
         break;
       }
     }
