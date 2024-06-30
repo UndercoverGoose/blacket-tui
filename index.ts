@@ -2,7 +2,7 @@ import { Terminal, Text } from '@lib/tui';
 import Color from '@lib/color';
 import auth_context from '@ctx/auth';
 import main_context from '@ctx/main';
-import { Notification, Tokens } from '@component/.';
+import { Notification, Tokens, Booster } from '@component/.';
 import v1 from '@lib/api';
 
 const VERSION = '0.6.2';
@@ -12,9 +12,9 @@ const version_header = new Text(-1, 0, Color.bright_magenta(`[blacket-tui ~ v${V
 const username_header = new Text(-1, 1, Color.blink_slow(Color.cyan('Awaiting Authorization')), 1, -1);
 const notif_section = new Notification();
 const tokens_header = new Tokens(0);
-const booster_header = new Text(-1, -1, Color.bright_black('No Booster Active'), 1, -1);
+const booster_header = new Booster();
 
-terminal.push(version_header, username_header, tokens_header.component, notif_section.component, booster_header);
+terminal.push(version_header, username_header, tokens_header.component, notif_section.component, booster_header.component);
 
 const token = await auth_context(terminal, notif_section);
 const _user = await v1.user(token);
@@ -29,14 +29,4 @@ username_header.text = Color.join(Color.hex(user.color, user.username, ' '), use
 tokens_header.set_tokens(user.tokens);
 terminal.write_buffer();
 
-setInterval(async () => {
-  const res = await v1.data();
-  if (res.error) return;
-  if (res.data.booster.active) {
-    const b = res.data.booster;
-    booster_header.text = Color.cyan('Booster Active: ', Color.bold(b.multiplier + 'x'), ' until ', Color.bold(new Date(b.time * 1000).toLocaleTimeString()));
-  } else booster_header.text = Color.bright_black('No Booster Active');
-  terminal.write_buffer();
-}, 10000);
-
-await main_context(terminal, token, notif_section, tokens_header);
+await main_context(terminal, token, notif_section, tokens_header, booster_header);
