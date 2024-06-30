@@ -1,4 +1,4 @@
-import { BASE_HEADERS, type FetchError } from '.';
+import { BASE_HEADERS, type FetchError, fetch } from '.';
 
 export type Data = {
   config: {

@@ -1,4 +1,4 @@
-import { AUTH_HEADERS, type FetchError } from '.';
+import { AUTH_HEADERS, type FetchError, fetch } from '.';
 
 export interface UserForeign {
   id: number;

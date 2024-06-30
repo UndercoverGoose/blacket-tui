@@ -1,3 +1,17 @@
+import { parseArgs } from 'util';
+
+export const { values } = parseArgs({
+  args: Bun.argv,
+  options: {
+    proxy: {
+      short: 'p',
+      type: 'string',
+    },
+  },
+  strict: true,
+  allowPositionals: true,
+});
+
 /**
  * The base headers for all API requests. This does not include authentication.
  */
@@ -20,6 +34,18 @@ export function AUTH_HEADERS(token: string) {
     ...BASE_HEADERS,
     Cookie: `token=${token}`,
   };
+}
+
+/**
+ * Applies a proxy to a URL.
+ * @param url The URL to proxy.
+ * @returns The proxied URL.
+ */
+export function fetch(input: URL | RequestInfo, init: RequestInit = {}) {
+  return globalThis.fetch(input, {
+    proxy: values.proxy,
+    ...init,
+  });
 }
 
 import auth_status from './auth-status';

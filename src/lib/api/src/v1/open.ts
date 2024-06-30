@@ -1,4 +1,4 @@
-import { AUTH_HEADERS, type FetchError } from '.';
+import { AUTH_HEADERS, type FetchError, fetch } from '.';
 import { RateLimiter } from './RateLimiter';
 
 type APIResponse =
