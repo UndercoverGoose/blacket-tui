@@ -3,6 +3,7 @@ import { type Terminal, Text } from '@lib/tui';
 import { Select, Input, Notification } from '@component/.';
 import { Dynamic } from '@lib/dynamic';
 import v1 from '@lib/api';
+import proxy_context from '@ctx/proxy';
 
 type Store = {
   [key: string]: { username: string } & (
@@ -18,7 +19,7 @@ type Store = {
 };
 const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
 
-const select = new Select('Select an Authorization Method:', ['[0] Load Previous ', '[1] Add via Username/Password ', '[2] Add via Token ']);
+const select = new Select('Select an Authorization Method:', ['[0] Load Previous ', '[1] Add via Username/Password ', '[2] Add via Token ', '[3] Set Proxy ']);
 const select2 = new Select('Select an Account:', []);
 const lo_text = new Text(0, 0, '');
 const username = new Input('Enter Username:', {
@@ -162,6 +163,10 @@ export default async function (terminal: Terminal, notif_section: Notification):
           notif_section.push_success(`Saved credentials for ${Color.italic(user.user.username)}`);
         }
         terminal.pop(token.component, up_text);
+        break;
+      }
+      case 3: {
+        await proxy_context(terminal, notif_section);
         break;
       }
     }
