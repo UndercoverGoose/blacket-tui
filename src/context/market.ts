@@ -1,13 +1,19 @@
 import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Notification, Searchable, Tokens } from '@component/.';
+import { Select, Notification, Searchable, Tokens, Booster } from '@component/.';
 
 const text = new Text(0, 0, '');
 const select = new Select('Select a page to view:', ['[0] Packs ', '[1] Items & Weekly Shop ']);
 const select2 = new Searchable('Select a pack to view:', []);
 select2.component.v_wrap = false;
-const select3 = new Select('Select an option to perform:', ['[0] View Blooks ', '[1] Purchase Pack ', '[2] Purchase Pack in Bulk ']);
+const select3 = new Select('Select an option to perform:', [
+  '[0] View Blooks ',
+  '[1] Purchase Pack ',
+  '[2] Purchase Pack in Bulk ',
+  '[3] Flip in Bulk ',
+  '[4] Flip while 2x ',
+]);
 const select4 = new Select('Blooks:', []);
 const select5 = new Select('Items:', []);
 const select6 = new Select('', ['[0] Stop '], {
@@ -22,7 +28,7 @@ const select7 = new Select('', ['[0] No ', '[1] Yes ']);
  * @param notif_section The global notification component
  * @param tokens The global tokens component
  */
-export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens, booster: Booster): Promise<void> {
   text.text = Color.yellow('Fetching market...');
   terminal.push(text);
   const _data = await v1.data(true);
@@ -155,6 +161,194 @@ export default async function (terminal: Terminal, token: string, notif_section:
                         .map(([blook, count, blook_info]) => {
                           const hex = rarity_color(blook_info?.rarity);
                           const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')}`;
+                          if (last_blook === blook) return Color.bold(text);
+                          return text;
+                        })
+                        .join('\n')
+                    )
+                  );
+                  terminal.write_buffer();
+                  await new Promise(r => setTimeout(r, data.rarities[all_blooks[res.blook].rarity].wait ?? 0));
+                }
+                terminal.pop(select6.component);
+                break;
+              }
+              case 3: {
+                let opened = 0;
+                let tokens_spent = 0;
+                let last_blook = '';
+                let run = true;
+                const results: { [key: string]: number } = {};
+                const temp_results: { [key: string]: number } = {};
+                terminal.push(select6.component);
+                select6.response().then(_select6 => {
+                  run = false;
+                });
+                while (run) {
+                  const res = await v1.open(token, pack_name);
+                  if (res.error) {
+                    notif_section.push_error(res.reason);
+                    continue;
+                  }
+                  const blook_info = all_blooks[res.blook];
+                  if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
+                  else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
+
+                  opened++;
+                  tokens_spent += pack_info.price;
+                  tokens.remove_tokens(pack_info.price);
+                  results[res.blook] = (results[res.blook] ?? 0) + 1;
+                  if (blook_info && blook_info.rarity !== 'Mystical') temp_results[res.blook] = (temp_results[res.blook] ?? 0) + 1;
+                  last_blook = res.blook;
+                  const value = Object.entries(results)
+                    .map(([blook_name, count]) => {
+                      return all_blooks[blook_name].price * count;
+                    })
+                    .reduce((a, b) => a + b, 0);
+                  select6.set_question(
+                    Color.join(
+                      Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
+                      '\n',
+                      Color.yellow(
+                        Color.underline('Opened'),
+                        ': ',
+                        Color.bold(opened.toLocaleString()),
+                        '\n',
+                        Color.underline('Tokens spent'),
+                        ': ',
+                        Color.bold(tokens_spent.toLocaleString()),
+                        '\n',
+                        Color.underline('Instant value'),
+                        ': ',
+                        Color.bold(value.toLocaleString()),
+                        ' ',
+                        value >= tokens_spent
+                          ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
+                          : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
+                        '\nUnlocks:\n'
+                      ),
+                      Object.entries(results)
+                        .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
+                        .sort((a, b) => {
+                          return a[2].chance - b[2].chance;
+                        })
+                        .map(([blook, count, blook_info]) => {
+                          const hex = rarity_color(blook_info?.rarity);
+                          const suffix = temp_results[blook] ? Color.bright_black(temp_results[blook] + 'x') : '';
+                          const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')} ${suffix}`;
+                          if (last_blook === blook) return Color.bold(text);
+                          return text;
+                        })
+                        .join('\n')
+                    )
+                  );
+                  terminal.write_buffer();
+                  await new Promise(r => setTimeout(r, data.rarities[all_blooks[res.blook].rarity].wait ?? 0));
+                  if (opened % 3 === 0) {
+                    const blook_name = Object.keys(temp_results)[0];
+                    if (!blook_name) continue;
+                    const blook_price = all_blooks[blook_name].price ?? 0;
+                    const quantity = temp_results[blook_name];
+                    v1.sell(token, blook_name, quantity).then(res => {
+                      if (res.error) notif_section.push_error(res.reason);
+                      else {
+                        notif_section.push_success(`Sold ${quantity}x ${blook_name} for ${(quantity * blook_price).toLocaleString()} tokens`);
+                        if (temp_results[blook_name] === quantity) delete temp_results[blook_name];
+                        else temp_results[blook_name] -= quantity;
+                        tokens.add_tokens(quantity * blook_price);
+                      }
+                    });
+                  }
+                }
+                terminal.pop(select6.component);
+                break;
+              }
+              case 4: {
+                let opened = 0;
+                let tokens_spent = 0;
+                let last_blook = '';
+                let run = true;
+                const results: { [key: string]: number } = {};
+                const temp_results: { [key: string]: number } = {};
+                terminal.push(select6.component);
+                select6.response().then(_select6 => {
+                  run = false;
+                });
+
+                (async () => {
+                  for (; run; ) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    const blook_name = Object.keys(temp_results)[0];
+                    if (!blook_name) continue;
+                    const blook_price = all_blooks[blook_name].price ?? 0;
+                    const quantity = temp_results[blook_name];
+                    const res = await v1.sell(token, blook_name, quantity);
+                    if (res.error) notif_section.push_error('SELL ' + res.reason);
+                    else {
+                      notif_section.push_success(`Sold ${quantity}x ${blook_name} for ${(quantity * blook_price).toLocaleString()} tokens`);
+                      if (temp_results[blook_name] === quantity) delete temp_results[blook_name];
+                      else temp_results[blook_name] -= quantity;
+                      tokens.add_tokens(quantity * blook_price);
+                    }
+                  }
+                })();
+
+                while (run) {
+                  if (booster.multiplier !== 2 || booster.end_time < Date.now()) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    continue;
+                  }
+                  const res = await v1.open(token, pack_name);
+                  if (res.error) {
+                    notif_section.push_error(res.reason);
+                    continue;
+                  }
+                  const blook_info = all_blooks[res.blook];
+                  if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
+                  else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
+
+                  opened++;
+                  tokens_spent += pack_info.price;
+                  tokens.remove_tokens(pack_info.price);
+                  results[res.blook] = (results[res.blook] ?? 0) + 1;
+                  if (blook_info && blook_info.rarity !== 'Mystical') temp_results[res.blook] = (temp_results[res.blook] ?? 0) + 1;
+                  last_blook = res.blook;
+                  const value = Object.entries(results)
+                    .map(([blook_name, count]) => {
+                      return all_blooks[blook_name].price * count;
+                    })
+                    .reduce((a, b) => a + b, 0);
+                  select6.set_question(
+                    Color.join(
+                      Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
+                      '\n',
+                      Color.yellow(
+                        Color.underline('Opened'),
+                        ': ',
+                        Color.bold(opened.toLocaleString()),
+                        '\n',
+                        Color.underline('Tokens spent'),
+                        ': ',
+                        Color.bold(tokens_spent.toLocaleString()),
+                        '\n',
+                        Color.underline('Instant value'),
+                        ': ',
+                        Color.bold(value.toLocaleString()),
+                        ' ',
+                        value >= tokens_spent
+                          ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
+                          : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
+                        '\nUnlocks:\n'
+                      ),
+                      Object.entries(results)
+                        .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
+                        .sort((a, b) => {
+                          return a[2].chance - b[2].chance;
+                        })
+                        .map(([blook, count, blook_info]) => {
+                          const hex = rarity_color(blook_info?.rarity);
+                          const suffix = temp_results[blook] ? Color.bright_black(temp_results[blook] + 'x') : '';
+                          const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')} ${suffix}`;
                           if (last_blook === blook) return Color.bold(text);
                           return text;
                         })

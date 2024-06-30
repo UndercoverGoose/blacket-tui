@@ -1,5 +1,5 @@
 import { type Terminal, Text } from '@lib/tui';
-import { Select, Notification, Tokens } from '@component/.';
+import { Select, Notification, Tokens, Booster } from '@component/.';
 import leaderboard from '@ctx/leaderboard';
 import inventory from '@ctx/inventory';
 import market from '@ctx/market';
@@ -33,7 +33,7 @@ const main_select = new Select(
  * @param notif_section The global notification component
  * @param tokens The global tokens component
  */
-export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
+export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens, booster: Booster): Promise<void> {
   while (true) {
     const _select = await main_select.response_bind(terminal);
     switch (_select) {
@@ -46,7 +46,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
         break;
       }
       case 4: {
-        await market(terminal, token, notif_section, tokens);
+        await market(terminal, token, notif_section, tokens, booster);
         break;
       }
       case 5: {
