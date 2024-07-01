@@ -166,25 +166,33 @@ let cached_data: APIResponse | null = null;
  */
 export default async function (use_cache = false): Promise<APIResponse | FetchError> {
   if (use_cache && cached_data) return cached_data;
-  const res = await fetch('https://blacket.org/data/index.json', {
-    headers: BASE_HEADERS,
-    method: 'GET',
-  });
-  switch (res.status) {
-    case 200: {
-      const json = (await res.json()) as Data;
-      cached_data = {
-        error: false,
-        data: json,
-      };
-      return cached_data;
+  try {
+    const res = await fetch('https://blacket.org/data/index.json', {
+      headers: BASE_HEADERS,
+      method: 'GET',
+    });
+    switch (res.status) {
+      case 200: {
+        const json = (await res.json()) as Data;
+        cached_data = {
+          error: false,
+          data: json,
+        };
+        return cached_data;
+      }
+      default: {
+        return {
+          error: true,
+          reason: `Unexpected status code: ${res.status}.`,
+          internal: true,
+        };
+      }
     }
-    default: {
-      return {
-        error: true,
-        reason: `Unexpected status code: ${res.status}.`,
-        internal: true,
-      };
-    }
+  } catch (err) {
+    return {
+      error: true,
+      reason: `Fetch Error: ${err}`,
+      internal: true,
+    };
   }
 }

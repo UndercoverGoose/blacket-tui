@@ -69,34 +69,42 @@ let cached_data: UserResponse | null = null;
  */
 export default async function (token: string, user_id: number | string = '', use_cache = false): Promise<UserResponse | FetchError> {
   if (use_cache && cached_data && !user_id) return cached_data;
-  const res = await fetch(`https://blacket.org/worker2/user/${user_id}`, {
-    headers: AUTH_HEADERS(token),
-    method: 'GET',
-  });
-  switch (res.status) {
-    case 200: {
-      const json = (await res.json()) as APIResponse;
-      if (json.error) return json;
-      if (user_id) {
-        return {
+  try {
+    const res = await fetch(`https://blacket.org/worker2/user/${user_id}`, {
+      headers: AUTH_HEADERS(token),
+      method: 'GET',
+    });
+    switch (res.status) {
+      case 200: {
+        const json = (await res.json()) as APIResponse;
+        if (json.error) return json;
+        if (user_id) {
+          return {
+            error: false,
+            is_foreign: true,
+            user: json.user as UserForeign,
+          };
+        }
+        cached_data = {
           error: false,
-          is_foreign: true,
-          user: json.user as UserForeign,
+          is_foreign: false,
+          user: json.user as User,
+        };
+        return cached_data;
+      }
+      default: {
+        return {
+          error: true,
+          reason: `Unexpected status code: ${res.status}.`,
+          internal: true,
         };
       }
-      cached_data = {
-        error: false,
-        is_foreign: false,
-        user: json.user as User,
-      };
-      return cached_data;
     }
-    default: {
-      return {
-        error: true,
-        reason: `Unexpected status code: ${res.status}.`,
-        internal: true,
-      };
-    }
+  } catch (err) {
+    return {
+      error: true,
+      reason: `Fetch Error: ${err}`,
+      internal: true,
+    };
   }
 }

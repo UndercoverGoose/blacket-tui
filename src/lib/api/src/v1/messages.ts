@@ -50,21 +50,29 @@ type APIResponse =
  * @returns The messages if successful, or an error if not.
  */
 export default async function (token: string, room: number | string, count = 250): Promise<APIResponse | FetchError> {
-  const res = await fetch(`https://blacket.org/worker2/messages/${room}?limit=${count}`, {
-    headers: AUTH_HEADERS(token),
-    method: 'GET',
-  });
-  switch (res.status) {
-    case 200: {
-      const json = (await res.json()) as APIResponse;
-      return json;
+  try {
+    const res = await fetch(`https://blacket.org/worker2/messages/${room}?limit=${count}`, {
+      headers: AUTH_HEADERS(token),
+      method: 'GET',
+    });
+    switch (res.status) {
+      case 200: {
+        const json = (await res.json()) as APIResponse;
+        return json;
+      }
+      default: {
+        return {
+          error: true,
+          reason: `Unexpected status code: ${res.status}.`,
+          internal: true,
+        };
+      }
     }
-    default: {
-      return {
-        error: true,
-        reason: `Unexpected status code: ${res.status}.`,
-        internal: true,
-      };
-    }
+  } catch (err) {
+    return {
+      error: true,
+      reason: `Fetch Error: ${err}`,
+      internal: true,
+    };
   }
 }
