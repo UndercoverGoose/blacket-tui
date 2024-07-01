@@ -77,7 +77,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
               const _token = res.token;
               set_text(Color.green('Logged in successfully.'), true);
               terminal.pop(lo_text);
-              if (account.proxy) values.proxy = ProxyStore[account.proxy];
+              if (!values.proxy && typeof account.proxy === 'number' && account.proxy > 0) values.proxy = ProxyStore[account.proxy];
               return _token;
             }
             case 'token': {
@@ -88,7 +88,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
                 break auth2;
               }
               terminal.pop(lo_text);
-              if (account.proxy) values.proxy = ProxyStore[account.proxy];
+              if (!values.proxy && typeof account.proxy === 'number' && account.proxy > 0) values.proxy = ProxyStore[account.proxy];
               return account.token;
             }
           }
