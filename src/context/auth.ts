@@ -3,10 +3,11 @@ import { type Terminal, Text } from '@lib/tui';
 import { Select, Input, Notification } from '@component/.';
 import { Dynamic } from '@lib/dynamic';
 import v1 from '@lib/api';
-import proxy_context from '@ctx/proxy';
+import proxy_context, { Store as ProxyStore } from '@ctx/proxy';
+import { values } from '@lib/api/src/v1';
 
 type Store = {
-  [key: string]: { username: string } & (
+  [key: string]: { username: string; proxy?: number } & (
     | {
         type: 'credential';
         password: string;
@@ -76,6 +77,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
               const _token = res.token;
               set_text(Color.green('Logged in successfully.'), true);
               terminal.pop(lo_text);
+              values.proxy = account.proxy ? ProxyStore[account.proxy] : undefined;
               return _token;
             }
             case 'token': {
@@ -86,6 +88,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
                 break auth2;
               }
               terminal.pop(lo_text);
+              values.proxy = account.proxy ? ProxyStore[account.proxy] : undefined;
               return account.token;
             }
           }

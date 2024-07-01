@@ -4,7 +4,7 @@ import { Select, Input, Notification, Searchable } from '@component/.';
 import { Dynamic } from '@lib/dynamic';
 import { values, fetch } from '@lib/api/src/v1';
 
-const Store: string[] = await new Dynamic<string[]>('proxy.json', []).setup();
+export const Store: string[] = await new Dynamic<string[]>('proxy.json', []).setup();
 
 const select = new Select('Select an action to perform:', ['[0] Load Previous ', '[1] Add Proxy ']);
 const search = new Searchable('Select a Proxy:', []);
