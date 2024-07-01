@@ -13,6 +13,7 @@ const select = new Select('Select an option:', [
   '[2] View Missing Blooks ',
   '[3] View Missing by Pack ',
   '[4] View All Blooks ',
+  '[5] Sell All Blooks ',
 ]);
 const select2 = new Searchable('Select a pack:', []);
 const search = new Searchable('Select a blook:', []);
@@ -178,7 +179,6 @@ export default async function (terminal: Terminal, token: string, notif_section:
         break;
       }
       case 3: {
-        // View Missing by Pack
         const packs = Object.keys(data.packs);
         select2.set_choices(packs);
         terminal.push(select2.component);
@@ -193,6 +193,21 @@ export default async function (terminal: Terminal, token: string, notif_section:
       }
       case 4: {
         await render_blooks(Object.keys(all_blooks));
+        break;
+      }
+      case 5: {
+        for (const [blook, quantity] of Object.entries(blooks)) {
+          if (quantity === 0) continue;
+          const sell = await v1.sell(token, blook, quantity);
+          if (sell.error) {
+            notif_section.push_error(sell.reason);
+            break;
+          }
+          notif_section.push_success(
+            `Successfully sold ${Color.bold(quantity + 'x')} ${Color.bold(blook)} for ${Color.bold('' + quantity * all_blooks[blook].price)} tokens.`
+          );
+          tokens.add_tokens(quantity * all_blooks[blook].price);
+        }
         break;
       }
     }
