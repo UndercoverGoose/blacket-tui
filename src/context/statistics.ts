@@ -168,7 +168,10 @@ export default async function (terminal: Terminal, token: string, notif_section:
       case 3: {
         const res = await v1.claim(token);
         if (res.error) notif_section.push(res.reason);
-        else notif_section.push(res.tokens + ' tokens claimed');
+        else {
+          notif_section.push(res.tokens + ' tokens claimed');
+          tokens.add_tokens(res.tokens);
+        }
         select.set_disabled_indexes([1, 3, 4]);
         break;
       }
