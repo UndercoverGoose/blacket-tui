@@ -26,7 +26,7 @@ export class Terminal extends BufferWrapper {
   hide_cursor() {
     process.stdout.write('\x1b[?25l');
   }
-  cursorTo(x: number, y: number) {
+  cursor_to(x: number, y: number) {
     process.stdout.write(`\x1b[${y};${x}H`);
   }
 
@@ -34,7 +34,6 @@ export class Terminal extends BufferWrapper {
     const key = handle_key(text);
     if (key === 'meta:quit') {
       this.show_cursor();
-      process.stdout.write(`\x1b[H\x1b[31mProcess killed by user.\x1b[0m`);
       process.exit(0);
     }
     for (let i = this.stack.length - 1; i >= 0; i--) {
