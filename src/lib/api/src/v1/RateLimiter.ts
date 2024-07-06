@@ -3,7 +3,7 @@ export class RateLimiter {
   private random: boolean;
   private random_range: number;
   private last_trigger = 0;
-  constructor(limit_ms: number, variable = false, variable_range_ms = 30) {
+  constructor(limit_ms: number, variable = false, variable_range_ms = 0) {
     this.limit = limit_ms;
     this.random = variable;
     this.random_range = variable_range_ms;
