@@ -1,6 +1,6 @@
 import Color from '@lib/color';
 import { type Terminal, Text } from '@lib/tui';
-import { Select, Input, Notification } from '@component/.';
+import { Select, Input, Notification, Searchable } from '@component/.';
 import { Dynamic } from '@lib/dynamic';
 import v1 from '@lib/api';
 import proxy_context, { Store as ProxyStore } from '@ctx/proxy';
@@ -21,7 +21,7 @@ type Store = {
 const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
 
 const select = new Select('Select an Authorization Method:', ['[0] Load Previous ', '[1] Add via Username/Password ', '[2] Add via Token ', '[3] Set Proxy ']);
-const select2 = new Select('Select an Account:', []);
+const search = new Searchable('Select an Account:', []);
 const lo_text = new Text(0, 0, '');
 const username = new Input('Enter Username:', {
   inline_header: true,
@@ -55,7 +55,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
       case 0: {
         const account_map = Object.entries(Store).map(([k, v]) => [k, v.username]);
         const account_names = account_map.map(([id, name], idx) => `[${idx}] ${name} - ${id} `);
-        select2.set_options(account_names);
+        search.set_choices(account_names);
         terminal.push(lo_text);
         function set_text(text: string, new_line = false) {
           if (new_line) lo_text.text += '\n' + text;
@@ -63,7 +63,7 @@ export default async function (terminal: Terminal, notif_section: Notification):
           terminal.write_buffer();
         }
         auth2: while (true) {
-          const _select2 = await select2.response_bind(terminal);
+          const _select2 = await search.response_bind(terminal);
           if (_select2 === -1) continue main;
           const account = Store[account_map[_select2][0]];
           switch (account.type) {
