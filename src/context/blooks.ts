@@ -51,6 +51,19 @@ export default async function (terminal: Terminal, token: string, notif_section:
   if (_data.error) return notif_section.push_error(_data.reason);
   const data = _data.data;
   const all_blooks = data.blooks;
+
+  const _pack_blooks = Object.values(data.packs)
+    .map(pack => pack.blooks)
+    .flat();
+  data.packs['Miscellaneous'] = {
+    price: -1,
+    color1: '#ffffff',
+    color2: '#ffffff',
+    image: '',
+    blooks: Object.keys(all_blooks).filter(k => !_pack_blooks.includes(k)),
+    hidden: true,
+  };
+
   const blooks = user.user.blooks;
 
   search.mutate_func = (blook_name: string) => {
