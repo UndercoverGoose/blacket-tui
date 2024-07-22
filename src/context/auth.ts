@@ -22,7 +22,6 @@ const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
 
 const select = new Select('Select an Authorization Method:', ['[0] Load Previous ', '[1] Add via Username/Password ', '[2] Add via Token ', '[3] Set Proxy ']);
 const search = new Searchable('Select an Account:', []);
-const lo_text = new Text(0, 0, '');
 const username = new Input('Enter Username:', {
   inline_header: true,
   placeholder: 'username',
@@ -56,44 +55,35 @@ export default async function (terminal: Terminal, notif_section: Notification):
         const account_map = Object.entries(Store).map(([k, v]) => [k, v.username]);
         const account_names = account_map.map(([id, name], idx) => `[${idx}] ${name} - ${id} `);
         search.set_choices(account_names);
-        terminal.push(lo_text);
-        function set_text(text: string, new_line = false) {
-          if (new_line) lo_text.text += '\n' + text;
-          else lo_text.text = text;
-          terminal.write_buffer();
-        }
         auth2: while (true) {
           const _select2 = await search.response_bind(terminal);
           if (_select2 === -1) continue main;
           const account = Store[account_map[_select2][0]];
           switch (account.type) {
             case 'credential': {
-              set_text(Color.white(`Logging in to ${Color.green(account.username)} with credentials...`));
+              notif_section.push(Color.white(`Logging in to ${Color.green(account.username)} with credentials...`));
               const res = await v1.login(account.username, account.password);
               if (res.error) {
-                set_text(Color.red(`Failed to validate credentials: ${res.reason}`), true);
+                notif_section.push(Color.red(`Failed to validate credentials: ${res.reason}`), true);
                 break auth2;
               }
               const _token = res.token;
-              set_text(Color.green('Logged in successfully.'), true);
-              terminal.pop(lo_text);
+              notif_section.push(Color.green('Logged in successfully.'), true);
               if (!values.proxy && typeof account.proxy === 'number' && account.proxy >= 0) values.proxy = ProxyStore[account.proxy];
               return _token;
             }
             case 'token': {
-              set_text(Color.white(`Logging in to ${Color.green(account.username)} with token...`));
+              notif_section.push(Color.white(`Logging in to ${Color.green(account.username)} with token...`));
               const state = await v1.auth_status(account.token);
               if (state.error) {
-                set_text(Color.red(`Failed to validate token: ${state.reason}`), true);
+                notif_section.push(Color.red(`Failed to validate token: ${state.reason}`), true);
                 break auth2;
               }
-              terminal.pop(lo_text);
               if (!values.proxy && typeof account.proxy === 'number' && account.proxy >= 0) values.proxy = ProxyStore[account.proxy];
               return account.token;
             }
           }
         }
-        terminal.pop(lo_text);
         break;
       }
       case 1: {
