@@ -167,9 +167,9 @@ export default async function (terminal: Terminal, token: string, notif_section:
       }
       case 3: {
         const res = await v1.claim(token);
-        if (res.error) notif_section.push(res.reason);
+        if (res.error) notif_section.push(Color.red('Daily reward: ', res.reason));
         else {
-          notif_section.push(res.tokens + ' tokens claimed');
+          notif_section.push(Color.green('Claimed ', Color.bold(res.tokens.toLocaleString()), ' tokens from daily reward.'));
           tokens.add_tokens(res.tokens);
         }
         select.set_disabled_indexes([1, 3, 4]);
