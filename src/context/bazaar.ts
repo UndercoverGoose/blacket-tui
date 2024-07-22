@@ -101,8 +101,9 @@ export default async function (terminal: Terminal, token: string, notif_section:
           notif_section.push_error(listings.reason);
           break;
         }
-        const selected_item = await render_bazaar_items(listings.bazaar);
-        if (selected_item) {
+        while (true) {
+          const selected_item = await render_bazaar_items(listings.bazaar);
+          if (!selected_item) break;
           select3.set_question(`Select an action to perform on ${Color.bold(selected_item.item)}:`);
           info_text.text = Color.yellow(`Seller: ${selected_item.seller}\nPrice: ${Color.bold(selected_item.price.toLocaleString())} tokens`);
           terminal.push(info_text);
@@ -119,6 +120,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
                 break;
               }
               notif_section.push_success('Item delisted successfully.');
+              listings.bazaar = listings.bazaar.filter(item => item.id !== selected_item.id);
               break;
             }
           }
@@ -128,17 +130,18 @@ export default async function (terminal: Terminal, token: string, notif_section:
       case 1: {
         const blooks_map = Object.keys(data.blooks);
         blook_search.set_choices(blooks_map);
-        const blook_index = await blook_search.response_bind(terminal);
-        if (blook_index === -1) break;
-        const blook_name = blooks_map[blook_index];
-        const selected_blook = data.blooks[blook_name];
-        const listings = await v1.bazaar(token, blook_name);
-        if (listings.error) {
-          notif_section.push_error(listings.reason);
-          break;
+        while (true) {
+          const blook_index = await blook_search.response_bind(terminal);
+          if (blook_index === -1) break;
+          const blook_name = blooks_map[blook_index];
+          const listings = await v1.bazaar(token, blook_name);
+          if (listings.error) {
+            notif_section.push_error(listings.reason);
+            break;
+          }
+          const selected_item = await render_bazaar_items(listings.bazaar, blook_name);
+          if (selected_item) await render_buy_item(selected_item);
         }
-        const selected_item = await render_bazaar_items(listings.bazaar, blook_name);
-        if (selected_item) await render_buy_item(selected_item);
         break;
       }
       case 2: {
@@ -155,7 +158,6 @@ export default async function (terminal: Terminal, token: string, notif_section:
           const blook_index = await blook_search.response_bind(terminal);
           if (blook_index === -1) break sub;
           const blook_name = missing_blooks[blook_index];
-          const selected_blook = data.blooks[blook_name];
           const listings = await v1.bazaar(token, blook_name);
           if (listings.error) {
             notif_section.push_error(listings.reason);
@@ -182,9 +184,11 @@ export default async function (terminal: Terminal, token: string, notif_section:
           notif_section.push_error(listings.reason);
           break;
         }
-        const selected_item = await render_bazaar_items(listings.bazaar);
-        if (selected_item) await render_buy_item(selected_item);
-        break;
+        while (true) {
+          const selected_item = await render_bazaar_items(listings.bazaar);
+          if (selected_item) await render_buy_item(selected_item);
+          else break;
+        }
       }
     }
   }
