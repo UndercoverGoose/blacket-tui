@@ -7,14 +7,20 @@ import type { User } from '@lib/api/src/v1/user';
 type BlookList = (keyof User['blooks'])[];
 
 const text = new Text(0, 0, '');
-const select = new Select('Select an option:', [
-  '[0] View All Obtained Blooks ',
-  '[1] View Obtained by Pack ',
-  '[2] View Missing Blooks ',
-  '[3] View Missing by Pack ',
-  '[4] View All Blooks ',
-  '[5] Sell All Blooks ',
-]);
+const select = new Select(
+  'Select an option:',
+  [
+    '[0] View All Obtained Blooks ',
+    '[1] View Obtained by Pack ',
+    '[2] View Missing Blooks ',
+    '[3] View Missing by Pack ',
+    '[4] View All Blooks ',
+    '[5] Sell All Blooks ',
+  ],
+  {
+    disabled_indexes: [5],
+  }
+);
 const select2 = new Searchable('Select a pack:', []);
 const search = new Searchable('Select a blook:', []);
 const select3 = new Select('', ['[0] List Blook ', '[1] Sell Blook ']);
