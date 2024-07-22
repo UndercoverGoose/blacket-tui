@@ -8,12 +8,13 @@ import v1 from '@lib/api';
 const VERSION = '0.7.0';
 
 const terminal = new Terminal();
-const version_header = new Text(-1, 0, Color.bright_magenta(`[blacket-tui ~ v${VERSION}]`), 1, -1);
-const username_header = new Text(-1, 1, Color.blink_slow(Color.cyan('Awaiting Authorization')), 1, -1);
+const version_header = new Text(-1, 0, Color.bright_black(`[blacket-tui ~ v${VERSION}]`), 1, -1);
+const username_header = new Text(-1, 1, '', 1, -1);
 const notif_section = new Notification();
 const tokens_header = new Tokens(0);
 const booster_header = new Booster();
 
+tokens_header.component.text = '';
 terminal.push(version_header, username_header, tokens_header.component, notif_section.component, booster_header.component);
 
 const token = await auth_context(terminal, notif_section);
