@@ -56,7 +56,7 @@ function set_text_2(user: UserForeign) {
     '\n'
   );
   if (user.clan) {
-    select_choices[4] = `${'\n'.repeat(9)}[4] View Clan `;
+    select_choices[4] = `${'\n'.repeat(10)}[4] View Clan `;
   } else {
     delete select_choices[4];
   }
@@ -131,36 +131,37 @@ export default async function (terminal: Terminal, token: string, notif_section:
           break;
         }
         const friends_map = friends.friends.map(f => f.username);
-        console.log(friends_map.length);
-        friends_select.set_choices(friends_map);
         friends_select.mutate_func = (friend_name: string) => {
           const friend = friends.friends.find(f => f.username === friend_name)!;
-          return Color.hex(friend.color, friend.role, ' ', friend.username);
+          return Color.hex(friend.color, '[', friend.role, '] ', friend.username);
         };
-        const _select = await friends_select.response_bind(terminal);
-        if (_select === -1) break;
-        const selected_friend = friends.friends[_select];
-        select2.set_question(
-          Color.join(
-            Color.green(Color.underline('Select an action to perform on'), ' '),
-            Color.hex(selected_friend.color, '[', selected_friend.role, '] ', selected_friend.username)
-          )
-        );
-        terminal.push(select2.component);
-        const _select2 = await select2.response();
-        terminal.pop(select2.component);
-        switch (_select2) {
-          case -1: {
-            break;
-          }
-          case 0: {
-            const res2 = await v1.user(token, selected_friend.id);
-            if (res2.error) {
-              notif_section.push_error(res2.reason);
+        friends_select.set_choices(friends_map);
+        mfl: while(true) {
+          const _select = await friends_select.response_bind(terminal);
+          if (_select === -1) break;
+          const selected_friend = friends.friends[_select];
+          select2.set_question(
+            Color.join(
+              Color.green(Color.underline('Select an action to perform on'), ' '),
+              Color.hex(selected_friend.color, '[', selected_friend.role, '] ', selected_friend.username)
+            )
+          );
+          terminal.push(select2.component);
+          const _select2 = await select2.response();
+          terminal.pop(select2.component);
+          switch (_select2) {
+            case -1: {
               break;
             }
-            set_text_2(res2.user);
-            break;
+            case 0: {
+              const res2 = await v1.user(token, selected_friend.id);
+              if (res2.error) {
+                notif_section.push_error(res2.reason);
+                break;
+              }
+              set_text_2(res2.user);
+              break mfl;
+            }
           }
         }
         break;
