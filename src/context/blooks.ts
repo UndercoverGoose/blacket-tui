@@ -88,6 +88,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
       const selected_blook = await search.response_bind(terminal);
       if (selected_blook === -1) break main;
       const blook_name = mapped[selected_blook];
+      if(!blooks[blook_name] || blooks[blook_name] === 0) continue;
       select3.set_question(`Select an option to perform on ${Color.bold(blook_name)}:`);
       sub: while (true) {
         if (blooks[blook_name] === 0) break;
