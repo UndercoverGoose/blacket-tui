@@ -5,7 +5,13 @@ import { Input, Notification, Searchable, Select, Tokens } from '@component/.';
 import type { User, UserForeign } from '@lib/api/src/v1/user';
 import type { BazaarItem } from '@lib/api/src/v1/bazaar';
 
-const select = new Select('Select an option:', ['[0] View Listings ', '[1] Search for Blook ', '[2] Search for Missing Blook ', '[3] Search by User ']);
+const select = new Select('Select an option:', [
+  '[0] View Listings ',
+  '[1] Raw Search',
+  '[2] Search for Blook ',
+  '[3] Search for Missing Blook ',
+  '[4] Search by User ',
+]);
 const search = new Searchable('Select an item:', []);
 const blook_search = new Searchable('Select a blook:', []);
 const input = new Input('', {});
@@ -128,6 +134,23 @@ export default async function (terminal: Terminal, token: string, notif_section:
         break;
       }
       case 1: {
+        input.set_question('Enter query to search for:');
+        input.set_value('');
+        const _input = await input.response_bind(terminal);
+        if (_input === '') break;
+        const listings = await v1.bazaar(token, _input);
+        if (listings.error) {
+          notif_section.push_error(listings.reason);
+          break;
+        }
+        while (true) {
+          const selected_item = await render_bazaar_items(listings.bazaar);
+          if (!selected_item) break;
+          await render_buy_item(selected_item);
+        }
+        break;
+      }
+      case 2: {
         const blooks_map = Object.keys(data.blooks);
         blook_search.set_choices(blooks_map);
         while (true) {
@@ -144,7 +167,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
         }
         break;
       }
-      case 2: {
+      case 3: {
         sub: while (true) {
           const _user = await v1.user(token);
           if (_user.error) {
@@ -168,7 +191,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
         }
         break;
       }
-      case 3: {
+      case 4: {
         input.set_question('Enter the user ID or username:');
         input.set_value('');
         const _input = await input.response_bind(terminal);
@@ -186,8 +209,8 @@ export default async function (terminal: Terminal, token: string, notif_section:
         }
         while (true) {
           const selected_item = await render_bazaar_items(listings.bazaar);
-          if (selected_item) await render_buy_item(selected_item);
-          else break;
+          if (!selected_item) break;
+          await render_buy_item(selected_item);
         }
       }
     }
