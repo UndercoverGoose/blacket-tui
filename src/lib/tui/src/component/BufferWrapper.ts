@@ -91,6 +91,7 @@ export class BufferWrapper implements Component {
    * Pushes a component to the stack.
    */
   push(...component: Component[]): void {
+    this.pop(...component);
     this.stack.push(...component);
   }
   /**
