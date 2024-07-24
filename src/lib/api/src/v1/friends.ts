@@ -1,6 +1,6 @@
 import { AUTH_HEADERS, type FetchError, fetch } from '.';
 
-type User = {
+export type User = {
   id: number;
   username: string;
   role: string;
