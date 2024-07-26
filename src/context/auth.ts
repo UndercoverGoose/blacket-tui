@@ -124,7 +124,6 @@ export const states = {
     function set_text(text: string, append = false) {
       if (append) result_text.text += '\n' + text;
       else result_text.text = text;
-      state.terminal.write_buffer();
     }
     while (true) {
       username_input.set_value('');

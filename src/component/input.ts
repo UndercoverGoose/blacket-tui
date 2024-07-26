@@ -149,6 +149,5 @@ export default class Input {
       this.inline_header ? ' ' : '\n',
       this.value === '' ? this.placeholder_func(this.placeholder) : validity_func(this.mutate(this.value))
     );
-    this.component.attached_terminal?.write_buffer();
   }
 }

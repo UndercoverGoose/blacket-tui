@@ -179,6 +179,5 @@ export default class Select {
         return this.choice_func(choice + '\n');
       })
     );
-    this.component.attached_terminal?.write_buffer();
   }
 }

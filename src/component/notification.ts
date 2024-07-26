@@ -66,6 +66,5 @@ export default class Notification {
       .reverse()
       .map(([message, count]) => `${message}${count > 1 ? Color.bright_black(` [${count}x]`) : ''}`)
       .join('\n');
-    this.component.attached_terminal?.write_buffer();
   }
 }

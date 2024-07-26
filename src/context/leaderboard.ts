@@ -50,7 +50,6 @@ export const states = {
         Color.green(lb_res.me.exp.exp.toLocaleString(), ` exp [Level ${Color.bold(lb_res.me.exp.level.toLocaleString())}]`)
       )
     );
-    state.terminal.write_buffer();
     return await new Promise(r => {
       root_text.process_key = (key: string) => {
         if (key === 'meta:escape') {

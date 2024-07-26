@@ -8,7 +8,7 @@ export default class Tokens {
   end_time = 0;
   constructor() {
     this.update_component();
-    
+
     setInterval(() => this.refresh(), 10000);
     this.refresh();
   }
@@ -29,6 +29,5 @@ export default class Tokens {
       this.multiplier > 0
         ? Color.cyan('Booster Active: ', Color.bold(this.multiplier + 'x'), ' until ', Color.bold(new Date(this.end_time).toLocaleTimeString()))
         : Color.bright_black('No Booster Active');
-    this.component.attached_terminal?.write_buffer();
   }
 }

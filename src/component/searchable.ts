@@ -163,6 +163,5 @@ export default class Searchable {
         })
         .join('\n')
     );
-    this.component.attached_terminal?.write_buffer();
   }
 }

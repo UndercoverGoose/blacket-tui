@@ -148,7 +148,6 @@ export const states = {
       return;
     }
     set_stat_text(user_res.user);
-    state.terminal.write_buffer();
   },
   /**
    * Select a friend to perform an action on.

@@ -47,6 +47,5 @@ export default class Tokens {
    */
   private update_component() {
     this.component.text = Color.yellow(this.tokens.toLocaleString() + ' tokens');
-    this.component.attached_terminal?.write_buffer();
   }
 }

@@ -198,7 +198,6 @@ export const states = {
       const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
       if (!cheapest) stat_text.text += Color.yellow('\nNo listing found on the bazaar.');
       else stat_text.text += Color.yellow(`\nCheapest listing on the bazaar: ${Color.bold(cheapest.price.toLocaleString())} tokens.`);
-      state.terminal.write_buffer();
     });
     const price = await states.get_input(state, `Enter the price to sell ${Color.bold(blook_name)} at:`, 1e9, 1);
     if (!price) {
@@ -238,7 +237,6 @@ export const states = {
       const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
       if (!cheapest) stat_text.text += Color.yellow('\nNo listing found on the bazaar.');
       else stat_text.text += Color.yellow(`\nCheapest listing on the bazaar: ${Color.bold(cheapest.price.toLocaleString())} tokens.`);
-      state.terminal.write_buffer();
     });
     const quantity = await states.get_input(
       state,
