@@ -1,24 +1,24 @@
-import { type Terminal, Text } from '@lib/tui';
+import { Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Input, Notification, Searchable, Select, Tokens } from '@component/.';
-import type { User, UserForeign } from '@lib/api/src/v1/user';
+import { Input, Searchable, Select } from '@component/.';
+import type { UserForeign } from '@lib/api/src/v1/user';
 import type { BazaarItem } from '@lib/api/src/v1/bazaar';
 import type { State } from '@ctx/state';
 
-const select = new Select('Select an option:', [
+const root_select = new Select('Select an option:', [
   '[0] View Listings ',
   '[1] Raw Search',
   '[2] Search for Blook ',
   '[3] Search for Missing Blook ',
   '[4] Search by User ',
 ]);
-const search = new Searchable('Select an item:', []);
+const listing_search = new Searchable('Select an item:', []);
 const blook_search = new Searchable('Select a blook:', []);
 const input = new Input('', {});
-const select2 = new Select('Select an action to perform:', ['[0] Request Seller ', '[1] Buy ']);
+const buy_select = new Select('Select an action to perform:', ['[0] Request Seller ', '[1] Buy ']);
 const info_text = new Text(0, 5, '');
-const select3 = new Select('Select an action to perform:', ['[0] Delist ']);
+const delist_select = new Select('Select an action to perform:', ['[0] Delist ']);
 
 export const states = {
   /**
@@ -26,13 +26,13 @@ export const states = {
    * @param state The current state.
    */
   root: async (state: State): Promise<void> => {
-    const _user = await v1.user(state.token, '', true);
-    const _data = await v1.data(true);
-    if (_user.error) return state.notif_section.push_error(_user.reason);
-    if (_data.error) return state.notif_section.push_error(_data.reason);
-    if (_user.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
-    let user = _user.user;
-    const data = _data.data;
+    const user_res = await v1.user(state.token, '', true);
+    const data_res = await v1.data(true);
+    if (user_res.error) return state.notif_section.push_error(user_res.reason);
+    if (data_res.error) return state.notif_section.push_error(data_res.reason);
+    if (user_res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
+    let user = user_res.user;
+    const data = data_res.data;
     function rarity_color(rarity: string): string {
       const rarity_info = data.rarities[rarity];
       if (!rarity_info) return '#ffffff';
@@ -46,8 +46,7 @@ export const states = {
       return Color.hex(hex, '[', blook.rarity, '] ', blook_name, ` ${count}x `);
     };
     while (true) {
-      const _select = await select.response_bind(state.terminal);
-      switch (_select) {
+      switch (await root_select.response_bind(state.terminal)) {
         case -1:
           return;
         case 0: {
@@ -83,9 +82,9 @@ export const states = {
   raw_search: async (state: State): Promise<void> => {
     input.set_question('Enter query to search for:');
     input.set_value('');
-    const _input = await input.response_bind(state.terminal);
-    if (_input === '') return;
-    const listings = await v1.bazaar(state.token, _input);
+    const input_res = await input.response_bind(state.terminal);
+    if (input_res === '') return;
+    const listings = await v1.bazaar(state.token, input_res);
     if (listings.error) return state.notif_section.push_error(listings.reason);
     await states.view_listings(state, listings.bazaar);
   },
@@ -118,11 +117,11 @@ export const states = {
     if (!user_id) {
       input.set_question('Enter the user ID or username:');
       input.set_value('');
-      const _input = await input.response_bind(state.terminal);
-      if (_input === '') return;
-      const _user = await v1.user(state.token, _input);
-      if (_user.error) return state.notif_section.push_error(_user.reason);
-      user_id = _user.user.id;
+      const input_res = await input.response_bind(state.terminal);
+      if (input_res === '') return;
+      const user_res = await v1.user(state.token, input_res);
+      if (user_res.error) return state.notif_section.push_error(user_res.reason);
+      user_id = user_res.user.id;
     }
     const listings = await v1.bazaar(state.token, user_id);
     if (listings.error) return state.notif_section.push_error(listings.reason);
@@ -139,12 +138,12 @@ export const states = {
     while (true) {
       const items_exact = only_blook ? items.filter(item => item.item === only_blook) : items;
       const item_map = items_exact.map(item => `${item.item} - ${item.price.toLocaleString()} tokens `);
-      search.set_choices(item_map);
-      const _search = await search.response_bind(state.terminal);
-      if (_search === -1 || items_exact.length === 0) return;
+      listing_search.set_choices(item_map);
+      const listing_index = await listing_search.response_bind(state.terminal);
+      if (listing_index === -1 || items_exact.length === 0) return;
       let removed_id: number | void;
-      if (is_self_listed) removed_id = await states.listing_options(state, items[_search]);
-      else removed_id = await states.buy_options(state, items[_search]);
+      if (is_self_listed) removed_id = await states.listing_options(state, items[listing_index]);
+      else removed_id = await states.buy_options(state, items[listing_index]);
       if (removed_id) items = items.filter(item => item.id !== removed_id);
     }
   },
@@ -155,14 +154,13 @@ export const states = {
    * @returns The ID of the item the action was performed on.
    */
   listing_options: async (state: State, item: BazaarItem): Promise<number | void> => {
-    select3.set_question(`Select an action to perform on ${Color.bold(item.item)} (${Color.bold(item.price.toLocaleString())}):`);
-    const _select3 = await select3.response_bind(state.terminal);
-    switch (_select3) {
+    delist_select.set_question(`Select an action to perform on ${Color.bold(item.item)} (${Color.bold(item.price.toLocaleString())}):`);
+    switch (await delist_select.response_bind(state.terminal)) {
       case -1:
         return;
       case 0: {
-        const delist = await v1.bazaar_remove(state.token, item.id);
-        if (delist.error) return state.notif_section.push_error(delist.reason);
+        const delist_res = await v1.bazaar_remove(state.token, item.id);
+        if (delist_res.error) return state.notif_section.push_error(delist_res.reason);
         state.notif_section.push_success('Item delisted successfully.');
         return item.id;
       }
@@ -175,22 +173,21 @@ export const states = {
    * @returns The ID of the item the action was performed on.
    */
   buy_options: async (state: State, item: BazaarItem): Promise<number | void> => {
-    select2.set_question(`Select an action to perform on ${Color.bold(item.item)}:`);
+    buy_select.set_question(`Select an action to perform on ${Color.bold(item.item)}:`);
     info_text.text = Color.yellow(`Seller: ${item.seller}\nPrice: ${Color.bold(item.price.toLocaleString())} tokens`);
     state.terminal.push(info_text);
     let purchased: number | undefined;
     main: while (true) {
-      const _select2 = await select2.response_bind(state.terminal);
-      switch (_select2) {
+      switch (await buy_select.response_bind(state.terminal)) {
         case -1:
           break main;
         case 0: {
-          const _seller = await v1.user(state.token, item.seller);
-          if (_seller.error) {
-            state.notif_section.push_error(_seller.reason);
+          const seller_res = await v1.user(state.token, item.seller);
+          if (seller_res.error) {
+            state.notif_section.push_error(seller_res.reason);
             break;
           }
-          const seller = _seller.user as UserForeign;
+          const seller = seller_res.user as UserForeign;
           info_text.text += Color.green(
             '\n\nSeller: ',
             Color.bold(`[${seller.role}] `, seller.username),
@@ -203,9 +200,9 @@ export const states = {
           break;
         }
         case 1: {
-          const purchase = await v1.bazaar_buy(state.token, item.id);
-          if (purchase.error) {
-            state.notif_section.push_error(purchase.reason);
+          const buy_res = await v1.bazaar_buy(state.token, item.id);
+          if (buy_res.error) {
+            state.notif_section.push_error(buy_res.reason);
             break;
           }
           state.notif_section.push_success('Blook purchased successfully.');

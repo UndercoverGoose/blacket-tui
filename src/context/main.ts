@@ -7,7 +7,7 @@ import { states as statistics } from '@ctx/statistics';
 import { states as blooks } from '@ctx/blooks';
 import { states as bazaar } from '@ctx/bazaar';
 
-const main_select = new Select(
+const root_select = new Select(
   'Select a page to view:',
   [
     '[0] Statistics ',
@@ -42,8 +42,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
       tokens,
       booster,
     };
-    const _select = await main_select.response_bind(terminal);
-    switch (_select) {
+    switch (await root_select.response_bind(terminal)) {
       case 0: {
         await statistics.root(state);
         break;

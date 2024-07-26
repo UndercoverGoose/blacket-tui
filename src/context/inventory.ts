@@ -4,10 +4,10 @@ import Color from '@lib/color';
 import { Select, Input } from '@component/.';
 import type { State } from '@ctx/state';
 
-const text = new Text(0, 0, '');
-const select = new Select('Select an item to view:', []);
-const select2 = new Select('Select an action to perform:', ['[0] Use Item ', '[1] List Item ']);
-const input = new Input('Enter the price to list at:', {
+const status_text = new Text(0, 0, '');
+const item_select = new Select('Select an item to view:', []);
+const action_select = new Select('Select an action to perform:', ['[0] Use Item ', '[1] List Item ']);
+const list_input = new Input('Enter the price to list at:', {
   mutate: (v: string) => ` ${v} ` + Color.reset(Color.bright_black(' = '), Color.yellow(Number(v.replaceAll(',', '')).toLocaleString(), ' tokens')),
 });
 
@@ -17,34 +17,34 @@ export const states = {
    * @param state The current state.
    */
   root: async (state: State): Promise<void> => {
-    text.text = Color.yellow('Fetching inventory...');
-    state.terminal.push(text);
-    const res = await v1.user(state.token);
-    if (res.error) {
-      state.notif_section.push_error(res.reason);
-      state.terminal.pop(text);
+    status_text.text = Color.yellow('Fetching inventory...');
+    state.terminal.push(status_text);
+    const user_res = await v1.user(state.token);
+    if (user_res.error) {
+      state.notif_section.push_error(user_res.reason);
+      state.terminal.pop(status_text);
       return;
     }
-    if (res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
-    text.text = '';
-    const inventory = res.user.inventory;
+    if (user_res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
+    status_text.text = '';
+    const inventory = user_res.user.inventory;
     const inventory_mapped: Record<string, number> = {};
     for (const item of inventory) inventory_mapped[item] = (inventory_mapped[item] ?? 0) + 1;
     while (true) {
       const options = Object.entries(inventory_mapped);
       if (inventory.length > 0) {
-        select.set_options(options.map(([k, v], idx) => `[${idx}] ${k} x${v} `));
-        select.set_disabled_indexes([]);
+        item_select.set_options(options.map(([k, v], idx) => `[${idx}] ${k} x${v} `));
+        item_select.set_disabled_indexes([]);
       } else {
-        select.set_options([Color.bright_black('No items in inventory.')]);
-        select.set_disabled_indexes([0]);
+        item_select.set_options([Color.bright_black('No items in inventory.')]);
+        item_select.set_disabled_indexes([0]);
       }
-      const _select = await select.response_bind(state.terminal);
-      if (_select === -1) {
-        state.terminal.pop(text);
+      const item_index = await item_select.response_bind(state.terminal);
+      if (item_index === -1) {
+        state.terminal.pop(status_text);
         return;
       }
-      const item_name = options[_select][0];
+      const item_name = options[item_index][0];
       const action_performed = await states.select_item(state, item_name);
       if (action_performed) inventory_mapped[item_name] -= 1;
     }
@@ -56,9 +56,8 @@ export const states = {
    * @returns Whether an action (list or sell) was performed or not.
    */
   select_item: async (state: State, item_name: string): Promise<boolean> => {
-    select2.set_question(`Select an action to perform on ${Color.bold(item_name)}:`);
-    const _select2 = await select2.response_bind(state.terminal);
-    switch (_select2) {
+    action_select.set_question(`Select an action to perform on ${Color.bold(item_name)}:`);
+    switch (await action_select.response_bind(state.terminal)) {
       case -1: {
         return false;
       }
@@ -78,14 +77,14 @@ export const states = {
    * @returns Whether the item was used successfully or not.
    */
   use_item: async (state: State, item_name: string): Promise<boolean> => {
-    text.text = Color.yellow('Using item...');
-    state.terminal.push(text);
-    const res = await v1.use(state.token, item_name);
-    text.text = '';
-    state.terminal.pop(text);
-    if (res.error) state.notif_section.push_error(res.reason);
+    status_text.text = Color.yellow('Using item...');
+    state.terminal.push(status_text);
+    const use_res = await v1.use(state.token, item_name);
+    status_text.text = '';
+    state.terminal.pop(status_text);
+    if (use_res.error) state.notif_section.push_error(use_res.reason);
     else {
-      state.notif_section.push_success(res.message);
+      state.notif_section.push_success(use_res.message);
       return true;
     }
     return false;
@@ -97,25 +96,25 @@ export const states = {
    * @returns Whether the item was listed or not.
    */
   sell_item: async (state: State, item_name: string): Promise<boolean> => {
-    input.set_question(`Enter the price to sell ${Color.bold(item_name)} at:`);
-    input.set_value('');
-    input.is_valid = (amount: string) => {
+    list_input.set_question(`Enter the price to sell ${Color.bold(item_name)} at:`);
+    list_input.set_value('');
+    list_input.is_valid = (amount: string) => {
       const num = Number(amount.replaceAll(',', ''));
       return !(isNaN(num) || num.toString().includes('.') || num <= 0 || num >= 1e9);
     };
-    const amount = await input.response_bind(state.terminal);
+    const amount = await list_input.response_bind(state.terminal);
     if (amount === '') return false;
     const tokens = Number(amount.replaceAll(',', ''));
-    if (!input.is_valid(amount) || isNaN(tokens)) {
+    if (!list_input.is_valid(amount) || isNaN(tokens)) {
       state.notif_section.push_error('Invalid amount of tokens entered.');
       return false;
     }
-    text.text = Color.yellow('Listing item...');
-    state.terminal.push(text);
-    const res = await v1.list(state.token, item_name, tokens);
-    text.text = '';
-    state.terminal.pop(text);
-    if (res.error) state.notif_section.push_error(res.reason);
+    status_text.text = Color.yellow('Listing item...');
+    state.terminal.push(status_text);
+    const list_res = await v1.list(state.token, item_name, tokens);
+    status_text.text = '';
+    state.terminal.pop(status_text);
+    if (list_res.error) state.notif_section.push_error(list_res.reason);
     else {
       state.notif_section.push_success(`Successfully listed ${Color.bold(item_name)} for ${Color.bold('' + tokens)} tokens.`);
       return true;

@@ -27,14 +27,14 @@ const state: State = {
 };
 
 const token = await auth_context.root(state);
-const _user = await v1.user(token);
-if (_user.error) {
-  username_header.text = Color.red(`Authorization Failed\n${_user.reason}`);
+const user_res = await v1.user(token);
+if (user_res.error) {
+  username_header.text = Color.red(`Authorization Failed\n${user_res.reason}`);
   terminal.write_buffer();
   process.exit();
 }
-if (_user.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
-const user = _user.user;
+if (user_res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
+const user = user_res.user;
 username_header.text = Color.join(Color.hex(user.color, user.username, ' '), user.clan ? Color.hex(user.clan.color, `[${user.clan.name}]`) : '');
 tokens_header.set_tokens(user.tokens);
 terminal.write_buffer();

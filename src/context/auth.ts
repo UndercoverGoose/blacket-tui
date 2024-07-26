@@ -21,20 +21,25 @@ type Store = {
 };
 const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
 
-const select = new Select('Select an Authorization Method:', ['[0] Load Previous ', '[1] Add via Username/Password ', '[2] Add via Token ', '[3] Set Proxy ']);
+const root_select = new Select('Select an Authorization Method:', [
+  '[0] Load Previous ',
+  '[1] Add via Username/Password ',
+  '[2] Add via Token ',
+  '[3] Set Proxy ',
+]);
 const search = new Searchable('Select an Account:', []);
-const username = new Input('Enter Username:', {
+const username_input = new Input('Enter Username:', {
   inline_header: true,
   placeholder: 'username',
 });
-const password = new Input('Enter Password:', {
+const password_input = new Input('Enter Password:', {
   inline_header: true,
   placeholder: 'password',
   mutate: (s: string) => '*'.repeat(s.length),
 });
-password.component.y = 1;
-const up_text = new Text(0, 3, '');
-const token = new Input('Enter Token:', {
+password_input.component.y = 1;
+const result_text = new Text(0, 3, '');
+const token_input = new Input('Enter Token:', {
   inline_header: true,
   placeholder: 'token',
 });
@@ -48,9 +53,8 @@ export const states = {
   root: async (state: State): Promise<string> => {
     let token: string | null = null;
     while (!token) {
-      select.set_disabled_indexes([Object.keys(Store).length === 0 ? 0 : -1]);
-      const _select = await select.response_bind(state.terminal);
-      switch (_select) {
+      root_select.set_disabled_indexes([Object.keys(Store).length === 0 ? 0 : -1]);
+      switch (await root_select.response_bind(state.terminal)) {
         case 0: {
           token = await states.load_previous(state);
           break;
@@ -81,27 +85,27 @@ export const states = {
     const account_names = account_map.map(([id, name], idx) => `[${idx}] ${name} - ${id} `);
     search.set_choices(account_names);
     while (true) {
-      const _select2 = await search.response_bind(state.terminal);
-      if (_select2 === -1) return null;
-      const account = Store[account_map[_select2][0]];
+      const account_index = await search.response_bind(state.terminal);
+      if (account_index === -1) return null;
+      const account = Store[account_map[account_index][0]];
       switch (account.type) {
         case 'credential': {
           state.notif_section.push(Color.white(`Logging in to ${Color.green(account.username)} with credentials...`));
-          const res = await v1.login(account.username, account.password);
-          if (res.error) {
-            state.notif_section.push_error(`Failed to validate credentials: ${res.reason}`, true);
+          const login_res = await v1.login(account.username, account.password);
+          if (login_res.error) {
+            state.notif_section.push_error(`Failed to validate credentials: ${login_res.reason}`, true);
             break;
           }
-          const _token = res.token;
+          const token = login_res.token;
           state.notif_section.push_success('Logged in successfully.', true);
           if (!values.proxy && typeof account.proxy === 'number' && account.proxy >= 0) values.proxy = ProxyStore[account.proxy];
-          return _token;
+          return token;
         }
         case 'token': {
           state.notif_section.push(Color.white(`Logging in to ${Color.green(account.username)} with token...`));
-          const res = await v1.auth_status(account.token);
-          if (res.error) {
-            state.notif_section.push_error(`Failed to validate token: ${res.reason}`, true);
+          const status_res = await v1.auth_status(account.token);
+          if (status_res.error) {
+            state.notif_section.push_error(`Failed to validate token: ${status_res.reason}`, true);
             break;
           }
           if (!values.proxy && typeof account.proxy === 'number' && account.proxy >= 0) values.proxy = ProxyStore[account.proxy];
@@ -115,43 +119,43 @@ export const states = {
    * @param state The current state.
    */
   add_via_pass: async (state: State): Promise<void> => {
-    state.terminal.push(username.component, password.component, up_text);
-    up_text.text = '';
+    state.terminal.push(username_input.component, password_input.component, result_text);
+    result_text.text = '';
     function set_text(text: string, append = false) {
-      if (append) up_text.text += '\n' + text;
-      else up_text.text = text;
+      if (append) result_text.text += '\n' + text;
+      else result_text.text = text;
       state.terminal.write_buffer();
     }
     while (true) {
-      username.set_value('');
-      password.set_value('');
-      const _username = await username.response();
-      if (_username === '') break;
-      const _password = await password.response();
-      if (_password === '') break;
+      username_input.set_value('');
+      password_input.set_value('');
+      const username_res = await username_input.response();
+      if (username_res === '') break;
+      const password_res = await password_input.response();
+      if (password_res === '') break;
       set_text(Color.white('Testing credentials...'));
-      const res = await v1.login(_username, _password);
+      const res = await v1.login(username_res, password_res);
       if (res.error) {
         set_text(Color.red(`Failed to validate: ${res.reason}`), true);
         continue;
       }
-      const _token = res.token;
+      const token = res.token;
       set_text(Color.white('Fetching user id...'));
 
-      const res2 = await v1.user(_token);
-      if (res2.error) {
-        set_text(Color.red(`Failed to fetch user id: ${res2.reason}`), true);
+      const user_res = await v1.user(token);
+      if (user_res.error) {
+        set_text(Color.red(`Failed to fetch user id: ${user_res.reason}`), true);
         continue;
       }
-      Store[res2.user.id] = {
+      Store[user_res.user.id] = {
         type: 'credential',
-        username: res2.user.username,
-        password: _password,
+        username: user_res.user.username,
+        password: password_res,
       };
-      state.notif_section.push_success(`Saved credentials for ${Color.italic(res2.user.username)}`);
+      state.notif_section.push_success(`Saved credentials for ${Color.italic(user_res.user.username)}`);
       break;
     }
-    state.terminal.pop(username.component, password.component, up_text);
+    state.terminal.pop(username_input.component, password_input.component, result_text);
     return;
   },
   /**
@@ -160,30 +164,30 @@ export const states = {
    */
   add_via_token: async (state: State): Promise<void> => {
     while (true) {
-      token.set_value('');
-      const _token = await token.response_bind(state.terminal);
-      if (_token === '') break;
-      const res = await v1.auth_status(_token);
-      if (res.error) {
-        state.notif_section.push_error(res.reason);
+      token_input.set_value('');
+      const token = await token_input.response_bind(state.terminal);
+      if (token === '') break;
+      const status_res = await v1.auth_status(token);
+      if (status_res.error) {
+        state.notif_section.push_error(status_res.reason);
         continue;
       }
-      if (!res.authed) {
+      if (!status_res.authed) {
         state.notif_section.push_error('Token is invalid.');
         continue;
       }
-      const user = await v1.user(_token);
-      if (user.error) {
-        state.notif_section.push_error(user.reason);
+      const user_res = await v1.user(token);
+      if (user_res.error) {
+        state.notif_section.push_error(user_res.reason);
         continue;
       }
-      if (user.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
-      Store[user.user.id] = {
+      if (user_res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
+      Store[user_res.user.id] = {
         type: 'token',
-        username: user.user.username,
-        token: _token,
+        username: user_res.user.username,
+        token: token,
       };
-      state.notif_section.push_success(`Saved credentials for ${Color.italic(user.user.username)}`);
+      state.notif_section.push_success(`Saved credentials for ${Color.italic(user_res.user.username)}`);
       break;
     }
   },

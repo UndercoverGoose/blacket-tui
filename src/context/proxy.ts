@@ -6,16 +6,15 @@ import type { State } from '@ctx/state';
 
 export const Store: string[] = await new Dynamic<string[]>('proxy.json', []).setup();
 
-const select = new Select('Select an action to perform:', ['[0] Load Previous ', '[1] Add Proxy ', '[2] Remove Proxy ']);
-const search = new Searchable('Select a Proxy:', []);
-const input = new Input('Enter Proxy URL:', {});
+const root_select = new Select('Select an action to perform:', ['[0] Load Previous ', '[1] Add Proxy ', '[2] Remove Proxy ']);
+const proxy_search = new Searchable('Select a Proxy:', []);
+const proxy_input = new Input('Enter Proxy URL:', {});
 
 export const states = {
   root: async (state: State): Promise<void> => {
     while (true) {
-      select.set_disabled_indexes([Store.length === 0 ? 0 : -1]);
-      const _select = await select.response_bind(state.terminal);
-      switch (_select) {
+      root_select.set_disabled_indexes([Store.length === 0 ? 0 : -1]);
+      switch (await root_select.response_bind(state.terminal)) {
         case -1:
           return;
         case 0: {
@@ -34,25 +33,25 @@ export const states = {
     }
   },
   select: async (state: State): Promise<void> => {
-    search.set_choices(Store);
-    const _search = await search.response_bind(state.terminal);
-    if (_search === -1) return;
-    values.proxy = Store[_search];
+    proxy_search.set_choices(Store);
+    const proxy_index = await proxy_search.response_bind(state.terminal);
+    if (proxy_index === -1) return;
+    values.proxy = Store[proxy_index];
     const res = await fetch('https://icanhazip.com');
     const ip = await res.text();
     state.notif_section.push(Color.green('Proxy set. IP set to: ', Color.bold(ip)));
   },
   add: async (state: State): Promise<void> => {
-    const proxy_url = await input.response_bind(state.terminal);
+    const proxy_url = await proxy_input.response_bind(state.terminal);
     if (proxy_url === '') return;
     Store.push(proxy_url);
     state.notif_section.push(Color.green('Proxy added.'));
   },
   remove: async (state: State): Promise<void> => {
-    search.set_choices(Store);
-    const _search = await search.response_bind(state.terminal);
-    if (_search === -1) return;
-    Store.splice(_search, 1);
+    proxy_search.set_choices(Store);
+    const proxy_index = await proxy_search.response_bind(state.terminal);
+    if (proxy_index === -1) return;
+    Store.splice(proxy_index, 1);
     state.notif_section.push(Color.green('Proxy removed.'));
   },
 };

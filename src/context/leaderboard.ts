@@ -3,7 +3,7 @@ import v1 from '@lib/api';
 import Color from '@lib/color';
 import type { State } from '@ctx/state';
 
-const text = new Text(0, 0, '', 1, 1, false);
+const root_text = new Text(0, 0, '', 1, 1, false);
 
 export const states = {
   /**
@@ -11,28 +11,28 @@ export const states = {
    * @param state The current state.
    */
   root: async (state: State): Promise<void> => {
-    text.text = Color.yellow('Fetching leaderboard...');
-    state.terminal.push(text);
-    const lb = await v1.leaderboard(state.token);
-    if (lb.error) {
-      state.terminal.pop(text);
-      return state.notif_section.push_error(lb.reason);
+    root_text.text = Color.yellow('Fetching leaderboard...');
+    state.terminal.push(root_text);
+    const lb_res = await v1.leaderboard(state.token);
+    if (lb_res.error) {
+      state.terminal.pop(root_text);
+      return state.notif_section.push_error(lb_res.reason);
     }
-    text.text = Color.join(
+    root_text.text = Color.join(
       Color.green(Color.bold('Token Leaderboard\n')),
-      lb.tokens
+      lb_res.tokens
         .map((t, idx) => Color.green(`${idx + 1}. `, Color.hex(t.color, t.username), ' - ', Color.green(t.tokens.toLocaleString(), ' tokens')))
         .join('\n'),
       '\n',
       Color.green(
-        `${lb.me.tokens.position.tokens}. `,
-        Color.hex(lb.me.exp.color, lb.me.exp.username),
+        `${lb_res.me.tokens.position.tokens}. `,
+        Color.hex(lb_res.me.exp.color, lb_res.me.exp.username),
         ' - ',
-        Color.green(lb.me.tokens.tokens.toLocaleString(), ' tokens')
+        Color.green(lb_res.me.tokens.tokens.toLocaleString(), ' tokens')
       ),
       '\n\n',
       Color.green(Color.bold('Experience Leaderboard\n')),
-      lb.exp
+      lb_res.exp
         .map((t, idx) =>
           Color.green(
             `${idx + 1}. `,
@@ -44,18 +44,18 @@ export const states = {
         .join('\n'),
       '\n',
       Color.green(
-        `${lb.me.exp.position.exp}. `,
-        Color.hex(lb.me.exp.color, lb.me.exp.username),
+        `${lb_res.me.exp.position.exp}. `,
+        Color.hex(lb_res.me.exp.color, lb_res.me.exp.username),
         ' - ',
-        Color.green(lb.me.exp.exp.toLocaleString(), ` exp [Level ${Color.bold(lb.me.exp.level.toLocaleString())}]`)
+        Color.green(lb_res.me.exp.exp.toLocaleString(), ` exp [Level ${Color.bold(lb_res.me.exp.level.toLocaleString())}]`)
       )
     );
     state.terminal.write_buffer();
     return await new Promise(r => {
-      text.process_key = (key: string) => {
+      root_text.process_key = (key: string) => {
         if (key === 'meta:escape') {
           r();
-          state.terminal.pop(text);
+          state.terminal.pop(root_text);
           return true;
         }
         return false;
