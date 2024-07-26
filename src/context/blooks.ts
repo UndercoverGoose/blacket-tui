@@ -1,8 +1,10 @@
-import { type Terminal, Text } from '@lib/tui';
+import { Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Input, Notification, Searchable, Select, Tokens } from '@component/.';
+import { Input, Searchable, Select } from '@component/.';
 import type { User } from '@lib/api/src/v1/user';
+import type { State } from '@ctx/state';
+import type { Data } from '@lib/api/src/v1/data';
 
 type BlookList = (keyof User['blooks'])[];
 
@@ -34,203 +36,261 @@ const input = new Input('Enter the amount to sell:', {
 });
 const text2 = new Text(0, 4, '');
 
-/**
- * Blook manager
- * @param terminal Reference to the root terminal
- * @param token The token of the authenticated account
- * @param notif_section The global notification component
- * @param tokens The global tokens component
- */
-export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens): Promise<void> {
-  text.text = Color.yellow('Fetching blooks...');
-  terminal.push(text);
-  const _data = await v1.data(true);
-  const user = await v1.user(token);
-  terminal.pop(text);
-  if (user.error) return notif_section.push_error(user.reason);
-  if (_data.error) return notif_section.push_error(_data.reason);
-  const data = _data.data;
-  const all_blooks = data.blooks;
-
-  const _pack_blooks = Object.values(data.packs)
-    .map(pack => pack.blooks)
-    .flat();
-  data.packs['Miscellaneous'] = {
-    price: -1,
-    color1: '#ffffff',
-    color2: '#ffffff',
-    image: '',
-    blooks: Object.keys(all_blooks).filter(k => !_pack_blooks.includes(k)),
-    hidden: true,
-  };
-
-  const blooks = user.user.blooks;
-
-  search.mutate_func = (blook_name: string) => {
-    const blook = all_blooks[blook_name];
-    const count = blooks[blook_name] ?? 0;
-    if (!blook) return blook_name + ` ${count}x`;
-    const hex = rarity_color(blook.rarity);
-    return Color.hex(hex, '[', blook.rarity, '] ', blook_name, ` ${count}x `);
-  };
-
-  function rarity_color(rarity: string): string {
-    const rarity_info = data.rarities[rarity];
-    if (!rarity_info) return '#ffffff';
-    return rarity_info.color;
-  }
-  async function render_blooks(_blooks: BlookList) {
-    const mapped = _blooks.map(blook_name => {
-      return blook_name;
+export const states = {
+  /**
+   * Blook manager.
+   * @param state The current state.
+   */
+  root: async (state: State): Promise<void> => {
+    text.text = Color.yellow('Fetching blooks...');
+    state.terminal.push(text);
+    const _data = await v1.data(true);
+    const user = await v1.user(state.token);
+    state.terminal.pop(text);
+    if (user.error) return state.notif_section.push_error(user.reason);
+    if (_data.error) return state.notif_section.push_error(_data.reason);
+    const data = _data.data;
+    const all_blooks = data.blooks;
+    const _pack_blooks = Object.values(data.packs)
+      .map(pack => pack.blooks)
+      .flat();
+    data.packs['Miscellaneous'] = {
+      price: -1,
+      color1: '#ffffff',
+      color2: '#ffffff',
+      image: '',
+      blooks: Object.keys(all_blooks).filter(k => !_pack_blooks.includes(k)),
+      hidden: true,
+    };
+    function rarity_color(rarity: string): string {
+      const rarity_info = data.rarities[rarity];
+      if (!rarity_info) return '#ffffff';
+      return rarity_info.color;
+    }
+    search.mutate_func = (blook_name: string) => {
+      const blook = all_blooks[blook_name];
+      const count = user.user.blooks[blook_name] ?? 0;
+      if (!blook) return blook_name + ` ${count}x`;
+      const hex = rarity_color(blook.rarity);
+      return Color.hex(hex, '[', blook.rarity, '] ', blook_name, ` ${count}x `);
+    };
+    while (true) {
+      const _select = await select.response_bind(state.terminal);
+      switch (_select) {
+        case -1:
+          return;
+        case 0: {
+          await states.render_blooks(state, Object.keys(user.user.blooks), user.user as User, all_blooks);
+          break;
+        }
+        case 1: {
+          const packs = Object.keys(data.packs);
+          while (true) {
+            const pack_name = await states.render_packs(state, packs);
+            if (!pack_name) break;
+            const pack_blooks = data.packs[pack_name].blooks;
+            const obtained = pack_blooks.filter(blook_name => user.user.blooks[blook_name]);
+            await states.render_blooks(state, obtained, user.user as User, all_blooks);
+          }
+          break;
+        }
+        case 2: {
+          const missing_blooks = Object.keys(all_blooks).filter(blook_name => !user.user.blooks[blook_name]);
+          await states.render_blooks(state, missing_blooks, user.user as User, all_blooks);
+          break;
+        }
+        case 3: {
+          const missing_blooks = Object.keys(all_blooks).filter(blook_name => !user.user.blooks[blook_name]);
+          const missing_packs = Object.keys(data.packs).filter(pack_name => {
+            const pack_blooks = data.packs[pack_name].blooks;
+            return pack_blooks.some(blook_name => missing_blooks.includes(blook_name));
+          });
+          while (true) {
+            const pack_name = await states.render_packs(state, missing_packs);
+            if (!pack_name) break;
+            const pack_blooks = data.packs[pack_name].blooks;
+            const missing = pack_blooks.filter(blook_name => missing_blooks.includes(blook_name));
+            await states.render_blooks(state, missing, user.user as User, all_blooks);
+          }
+          break;
+        }
+        case 4: {
+          await states.render_blooks(state, Object.keys(all_blooks), user.user as User, all_blooks);
+          break;
+        }
+      }
+    }
+  },
+  /**
+   * Render a list of blooks.
+   * @param state The current state.
+   * @param blooks The blooks to render.
+   * @param user The user object. Passed through for additional information when performing actions.
+   * @param raw_blooks The raw blooks object. Passed through for additional information when performing actions.
+   */
+  render_blooks: async (state: State, blooks: BlookList, user?: User, raw_blooks?: Data['blooks']): Promise<void> => {
+    search.set_choices(blooks);
+    while (true) {
+      const selected_blook = await search.response_bind(state.terminal);
+      if (selected_blook === -1) break;
+      const blook_name = blooks[selected_blook];
+      await states.select_action(state, blook_name, user, raw_blooks);
+    }
+  },
+  /**
+   * Render a list of packs.
+   * @param state The current state.
+   * @param packs The packs to render.
+   * @returns The selected pack name.
+   */
+  render_packs: async (state: State, packs: string[]): Promise<string | void> => {
+    select2.mutate_func = (pack_name: string) => {
+      return ` ${pack_name} `;
+    };
+    select2.set_choices(packs);
+    const _select2 = await select2.response_bind(state.terminal);
+    if (_select2 === -1) return;
+    const pack_name = packs[_select2];
+    return pack_name;
+  },
+  /**
+   * Perform an action on a blook.
+   * @param state The current state.
+   * @param blook_name The name of the blook.
+   * @param user The user object. Passed through for additional information when performing actions.
+   * @param blooks The raw blooks object. Passed through for additional information when performing actions.
+   */
+  select_action: async (state: State, blook_name: string, user?: User, blooks?: Data['blooks']): Promise<void> => {
+    select3.set_question(`Select an option to perform on ${Color.bold(blook_name)}:`);
+    while (true) {
+      const _select3 = await select3.response_bind(state.terminal);
+      switch (_select3) {
+        case -1:
+          return;
+        case 0: {
+          await states.list_blook(state, blook_name, user, blooks);
+          break;
+        }
+        case 1: {
+          await states.sell_blook(state, blook_name, user, blooks);
+          break;
+        }
+      }
+    }
+  },
+  /**
+   * List a blook.
+   * @param state The current state.
+   * @param blook_name The name of the blook.
+   * @param user The user object.
+   * @param blooks The raw blooks object.
+   */
+  list_blook: async (state: State, blook_name: string, user?: User, blooks?: Data['blooks']): Promise<void> => {
+    if (user && blooks) {
+      text2.text = Color.join(
+        Color.yellow(`This blook can be instant sold for ${Color.bold('' + blooks[blook_name].price)} tokens.\n`),
+        Color.yellow(`You currently have ${Color.bold(user.blooks[blook_name].toLocaleString())} of this blook.`)
+      );
+      state.terminal.push(text2);
+    }
+    let exited = false;
+    v1.bazaar(state.token, blook_name).then(res => {
+      if (res.error) return state.notif_section.push_error(res.reason);
+      if (exited) return;
+      const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
+      if (!cheapest) text2.text += Color.yellow('\nNo listing found on the bazaar.');
+      else text2.text += Color.yellow(`\nCheapest listing on the bazaar: ${Color.bold(cheapest.price.toLocaleString())} tokens.`);
+      state.terminal.write_buffer();
     });
-    search.set_choices(mapped);
-    main: while (true) {
-      const selected_blook = await search.response_bind(terminal);
-      if (selected_blook === -1) break main;
-      const blook_name = mapped[selected_blook];
-      if(!blooks[blook_name] || blooks[blook_name] === 0) continue;
-      select3.set_question(`Select an option to perform on ${Color.bold(blook_name)}:`);
-      sub: while (true) {
-        if (blooks[blook_name] === 0) break;
-        const _select3 = await select3.response_bind(terminal);
-        switch (_select3) {
-          case -1: {
-            break sub;
-          }
-          case 0: {
-            _input_mutate_multi = 1;
-            input.set_question(`Enter the price to sell ${Color.bold(blook_name)} at:`);
-            input.set_value('');
-            input.is_valid = (amount: string) => {
-              const num = Number(amount.replaceAll(',', ''));
-              return !(isNaN(num) || num.toString().includes('.') || num <= 0 || num >= 1e9);
-            };
-            text2.text = Color.join(
-              Color.yellow(`This blook can be instant sold for ${Color.bold('' + all_blooks[blook_name].price)} tokens.\n`),
-              Color.yellow(`You currently have ${Color.bold('' + blooks[blook_name])} of this blook.`)
-            );
-            v1.bazaar(token, blook_name).then(res => {
-              if (res.error) return notif_section.push_error(res.reason);
-              const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
-              if (!cheapest) text2.text += Color.yellow('\nNo listing found on the bazaar.');
-              else text2.text += Color.yellow(`\nCheapest listing on the bazaar: ${Color.bold('' + cheapest.price)} tokens.`);
-              terminal.write_buffer();
-            });
-            terminal.push(text2);
-            const amount = await input.response_bind(terminal);
-            terminal.pop(text2);
-            if (amount === '') break;
-            const tokens = Number(amount.replaceAll(',', ''));
-            if (!input.is_valid(amount) || isNaN(tokens)) {
-              notif_section.push_error('Invalid amount of tokens entered.');
-              break;
-            }
-            const list = await v1.list(token, blook_name, tokens);
-            if (list.error) {
-              notif_section.push_error(list.reason);
-              break;
-            }
-            notif_section.push_success(`Successfully listed ${Color.bold(blook_name)} for ${Color.bold('' + tokens)} tokens.`);
-            blooks[blook_name] -= 1;
-            break;
-          }
-          case 1: {
-            _input_mutate_multi = all_blooks[blook_name].price;
-            input.set_question(`Enter the amount of ${Color.bold(blook_name)} to sell:`);
-            input.set_value('');
-            input.is_valid = (amount: string) => {
-              const num = Number(amount.replaceAll(',', ''));
-              return !(isNaN(num) || num.toString().includes('.') || num <= 0 || num > blooks[blook_name]);
-            };
-            text2.text = Color.join(
-              Color.yellow(`This blook can be instant sold for ${Color.bold('' + all_blooks[blook_name].price)} tokens.\n`),
-              Color.yellow(`You currently have ${Color.bold('' + blooks[blook_name])} of this blook.`)
-            );
-            terminal.push(text2);
-            const amount = await input.response_bind(terminal);
-            terminal.pop(text2);
-            if (amount === '') break;
-            const quantity = Number(amount.replaceAll(',', ''));
-            if (!input.is_valid(amount) || isNaN(quantity)) {
-              notif_section.push_error('Invalid amount of blooks entered.');
-              break;
-            }
-            const sell = await v1.sell(token, blook_name, quantity);
-            if (sell.error) {
-              notif_section.push_error(sell.reason);
-              break;
-            }
-            notif_section.push_success(
-              `Successfully sold ${Color.bold('' + quantity)} ${Color.bold(blook_name)} for ${Color.bold('' + quantity * all_blooks[blook_name].price)} tokens.`
-            );
-            tokens.add_tokens(quantity * all_blooks[blook_name].price);
-            blooks[blook_name] -= quantity;
-          }
-        }
-      }
+    const price = await states.get_input(state, `Enter the price to sell ${Color.bold(blook_name)} at:`, 1e9, 1);
+    if (!price) {
+      state.terminal.pop(text2);
+      exited = true;
+      return;
     }
-    // text2
-    // input
-  }
-  main: while (true) {
-    const _select = await select.response_bind(terminal);
-    switch (_select) {
-      case -1: {
-        break main;
-      }
-      case 0: {
-        await render_blooks(Object.keys(blooks));
-        break;
-      }
-      case 1: {
-        const packs = Object.keys(data.packs);
-        select2.set_choices(packs);
-        const _select2 = await select2.response_bind(terminal);
-        if (_select2 === -1) continue main;
-        const pack_name = packs[_select2];
-        const pack_blooks = data.packs[pack_name].blooks;
-        const obtained = pack_blooks.filter(blook_name => blooks[blook_name]);
-        await render_blooks(obtained);
-        break;
-      }
-      case 2: {
-        const missing = Object.keys(all_blooks).filter(blook_name => !blooks[blook_name]);
-        await render_blooks(missing);
-        break;
-      }
-      case 3: {
-        const packs = Object.keys(data.packs);
-        select2.set_choices(packs);
-        terminal.push(select2.component);
-        const _select2 = await select2.response();
-        terminal.pop(select2.component);
-        if (_select2 === -1) continue main;
-        const pack_name = packs[_select2];
-        const pack_blooks = data.packs[pack_name].blooks;
-        const missing = pack_blooks.filter(blook_name => !blooks[blook_name]);
-        await render_blooks(missing);
-        break;
-      }
-      case 4: {
-        await render_blooks(Object.keys(all_blooks));
-        break;
-      }
-      case 5: {
-        for (const [blook, quantity] of Object.entries(blooks)) {
-          if (quantity === 0) continue;
-          const sell = await v1.sell(token, blook, quantity);
-          if (sell.error) {
-            notif_section.push_error(sell.reason);
-            break;
-          }
-          notif_section.push_success(
-            `Successfully sold ${Color.bold(quantity + 'x')} ${Color.bold(blook)} for ${Color.bold('' + quantity * all_blooks[blook].price)} tokens.`
-          );
-          tokens.add_tokens(quantity * all_blooks[blook].price);
-        }
-        break;
-      }
+    const list = await v1.list(state.token, blook_name, price);
+    if (list.error) {
+      state.notif_section.push_error(list.reason);
+      state.terminal.pop(text2);
+      exited = true;
+      return;
     }
-  }
-  terminal.pop(text, select.component);
-}
+    state.notif_section.push_success(`Successfully listed ${Color.bold(blook_name)} for ${Color.bold(price.toLocaleString())} tokens.`);
+    if (user) user.blooks[blook_name] -= 1;
+    state.terminal.pop(text2);
+    exited = true;
+  },
+  /**
+   * Sell a blook.
+   * @param state The current state.
+   * @param blook_name The name of the blook.
+   * @param user The user object.
+   * @param blooks The raw blooks object.
+   */
+  sell_blook: async (state: State, blook_name: string, user?: User, blooks?: Data['blooks']): Promise<void> => {
+    if (user && blooks) {
+      text2.text = Color.join(
+        Color.yellow(`This blook can be instant sold for ${Color.bold('' + blooks[blook_name].price)} tokens.\n`),
+        Color.yellow(`You currently have ${Color.bold(user.blooks[blook_name].toLocaleString())} of this blook.`)
+      );
+      state.terminal.push(text2);
+    }
+    v1.bazaar(state.token, blook_name).then(res => {
+      if (res.error) return state.notif_section.push_error(res.reason);
+      const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
+      if (!cheapest) text2.text += Color.yellow('\nNo listing found on the bazaar.');
+      else text2.text += Color.yellow(`\nCheapest listing on the bazaar: ${Color.bold(cheapest.price.toLocaleString())} tokens.`);
+      state.terminal.write_buffer();
+    });
+    const quantity = await states.get_input(
+      state,
+      `Enter the amount of ${Color.bold(blook_name)} to sell:`,
+      user?.blooks[blook_name] ?? 1e9,
+      blooks?.[blook_name]?.price ?? 0
+    );
+    if (!quantity) {
+      state.terminal.pop(text2);
+      return;
+    }
+    const sell = await v1.sell(state.token, blook_name, quantity);
+    if (sell.error) {
+      state.notif_section.push_error(sell.reason);
+      state.terminal.pop(text2);
+      return;
+    }
+    const sold_for = quantity * (blooks ? blooks[blook_name].price : 0);
+    state.notif_section.push_success(
+      `Successfully sold ${Color.bold('' + quantity)} ${Color.bold(blook_name)} for ${Color.bold(sold_for.toLocaleString())} tokens.`
+    );
+    state.tokens.add_tokens(sold_for);
+    if (user) user.blooks[blook_name] -= quantity;
+    state.terminal.pop(text2);
+  },
+  /**
+   * Get a number input from the user.
+   * @param state The current state.
+   * @param text The question to ask.
+   * @param max The maximum value allowed.
+   * @param value_multiplier The value to multiply the input by.
+   * @returns The number input by the user.
+   */
+  get_input: async (state: State, text: string, max = 1e9, value_multiplier = 1): Promise<number | void> => {
+    _input_mutate_multi = value_multiplier;
+    input.set_question(text);
+    input.set_value('');
+    input.is_valid = (amount: string) => {
+      const num = Number(amount.replaceAll(',', ''));
+      return !(isNaN(num) || num.toString().includes('.') || num <= 0 || num > max);
+    };
+    while (true) {
+      const amount = await input.response_bind(state.terminal);
+      if (amount === '') return;
+      const value = Number(amount.replaceAll(',', ''));
+      if (!input.is_valid(amount) || isNaN(value)) {
+        state.notif_section.push_error('Invalid value entered.');
+        continue;
+      }
+      return value;
+    }
+  },
+};

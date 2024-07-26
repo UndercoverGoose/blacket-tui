@@ -1,9 +1,10 @@
 import { Terminal, Text } from '@lib/tui';
 import Color from '@lib/color';
-import auth_context from '@ctx/auth';
+import { states as auth_context } from '@ctx/auth';
 import main_context from '@ctx/main';
 import { Notification, Tokens, Booster } from '@component/.';
 import v1 from '@lib/api';
+import { type State } from '@ctx/state';
 
 const VERSION = '0.7.0';
 
@@ -17,7 +18,15 @@ const booster_header = new Booster();
 tokens_header.component.text = '';
 terminal.push(version_header, username_header, tokens_header.component, notif_section.component, booster_header.component);
 
-const token = await auth_context(terminal, notif_section);
+const state: State = {
+  terminal,
+  notif_section,
+  tokens: tokens_header,
+  booster: booster_header,
+  token: '',
+};
+
+const token = await auth_context.root(state);
 const _user = await v1.user(token);
 if (_user.error) {
   username_header.text = Color.red(`Authorization Failed\n${_user.reason}`);

@@ -1,11 +1,11 @@
-import { type Terminal, Text } from '@lib/tui';
+import { type Terminal } from '@lib/tui';
 import { Select, Notification, Tokens, Booster } from '@component/.';
-import leaderboard from '@ctx/leaderboard';
-import inventory from '@ctx/inventory';
+import { states as leaderboard } from '@ctx/leaderboard';
+import { states as inventory } from '@ctx/inventory';
 import market from '@ctx/market';
-import statistics from '@ctx/statistics';
-import blooks from '@ctx/blooks';
-import bazaar from '@ctx/bazaar';
+import { states as statistics } from '@ctx/statistics';
+import { states as blooks } from '@ctx/blooks';
+import { states as bazaar } from '@ctx/bazaar';
 
 const main_select = new Select(
   'Select a page to view:',
@@ -35,14 +35,21 @@ const main_select = new Select(
  */
 export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens, booster: Booster): Promise<void> {
   while (true) {
+    const state = {
+      terminal,
+      token,
+      notif_section,
+      tokens,
+      booster,
+    };
     const _select = await main_select.response_bind(terminal);
     switch (_select) {
       case 0: {
-        await statistics(terminal, token, notif_section, tokens);
+        await statistics.root(state);
         break;
       }
       case 1: {
-        await leaderboard(terminal, token, notif_section);
+        await leaderboard.root(state);
         break;
       }
       case 4: {
@@ -50,15 +57,15 @@ export default async function (terminal: Terminal, token: string, notif_section:
         break;
       }
       case 5: {
-        await blooks(terminal, token, notif_section, tokens);
+        await blooks.root(state);
         break;
       }
       case 6: {
-        await bazaar(terminal, token, notif_section, tokens);
+        await bazaar.root(state);
         break;
       }
       case 7: {
-        await inventory(terminal, token, notif_section, tokens);
+        await inventory.root(state);
         break;
       }
     }
