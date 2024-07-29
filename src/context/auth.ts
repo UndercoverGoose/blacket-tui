@@ -6,6 +6,7 @@ import v1 from '@lib/api';
 import { Store as ProxyStore, states as proxy_context } from '@ctx/proxy';
 import { values } from '@lib/api/src/v1';
 import type { State } from '@ctx/state';
+import { states as scripts } from '@ctx/scripts';
 
 type Store = {
   [key: string]: { username: string; proxy?: number } & (
@@ -26,6 +27,7 @@ const root_select = new Select('Select an Authorization Method:', [
   '[1] Add via Username/Password ',
   '[2] Add via Token ',
   '[3] Set Proxy ',
+  '[4] Execute Script ',
 ]);
 const search = new Searchable('Select an Account:', []);
 const username_input = new Input('Enter Username:', {
@@ -69,6 +71,10 @@ export const states = {
         }
         case 3: {
           await proxy_context.root(state);
+          break;
+        }
+        case 4: {
+          await scripts.root(state);
           break;
         }
       }

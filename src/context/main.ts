@@ -6,6 +6,7 @@ import market from '@ctx/market';
 import { states as statistics } from '@ctx/statistics';
 import { states as blooks } from '@ctx/blooks';
 import { states as bazaar } from '@ctx/bazaar';
+import { states as scripts } from '@ctx/scripts';
 
 const root_select = new Select(
   'Select a page to view:',
@@ -20,6 +21,7 @@ const root_select = new Select(
     '[7] Inventory ',
     '[8] Settings ',
     '[9] News ',
+    '[10] Scripts ',
   ],
   {
     disabled_indexes: [2, 3, 8, 9],
@@ -65,6 +67,10 @@ export default async function (terminal: Terminal, token: string, notif_section:
       }
       case 7: {
         await inventory.root(state);
+        break;
+      }
+      case 10: {
+        await scripts.root(state);
         break;
       }
     }
