@@ -17,13 +17,21 @@ export class Dynamic<T extends Object> {
     if (res.exists) {
       this.cache = res.value as T;
     }
-    return new Proxy(this.cache, {
+    return this.vr_proxy(this.cache);
+  }
+  private v_proxy(v: any): any {
+    return new Proxy(v, {
       set: (t, p, v) => {
+        if (typeof v === 'object') v = this.vr_proxy(v);
         (t as any)[p] = v;
         this.write();
         return true;
       },
     });
+  }
+  private vr_proxy(v: any): any {
+    for (const key in v) if (typeof v[key] === 'object') v[key] = this.vr_proxy(v[key]);
+    return this.v_proxy(v);
   }
   private async write(): Promise<void> {
     await Bun.write(this.store_path, JSON.stringify(this.cache, null, 2));
