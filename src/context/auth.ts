@@ -297,7 +297,11 @@ export const states = {
           continue;
         }
         state.notif_section.push_success('Account creation request sent.');
-        const pending_count = Object.keys(Store).filter(id => id.startsWith('pending')).length;
+        const pending_count =
+          Object.keys(Store)
+            .filter(id => id.startsWith('pending'))
+            .map(v => Number(v.split('-')[1]))
+            .reduce((a, b) => Math.max(a, b), 0) + 1;
         Store[`pending-${pending_count}`] = {
           type: 'credential',
           username: username_res,
