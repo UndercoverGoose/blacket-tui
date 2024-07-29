@@ -140,6 +140,7 @@ export const states = {
 
           let login_res = await v1.login(account.username, account.password);
           if (login_res.error && login_res.reason === 'You must specify a code.') {
+            code_input.set_value('');
             const code_res = await code_input.response_bind(state.terminal);
             login_res = await v1.login(account.username, account.password, code_res);
           }
@@ -199,6 +200,7 @@ export const states = {
       set_text(Color.white('Testing credentials...'));
       let login_res = await v1.login(username_res, password_res);
       if (login_res.error && login_res.reason === 'You must specify a code.') {
+        code_input.set_value('');
         const code_res = await code_input.response_bind(state.terminal);
         login_res = await v1.login(username_res, password_res, code_res);
       }
