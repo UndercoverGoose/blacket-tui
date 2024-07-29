@@ -16,12 +16,13 @@ type LoginResponse = {
  * @param password The password to login with.
  * @returns The users token if successful, or an error if not.
  */
-export default async function (username: string, password: string, proxy?: string): Promise<LoginResponse | FetchError> {
+export default async function (username: string, password: string, code?: number | string, proxy?: string): Promise<LoginResponse | FetchError> {
   const res = await fetch('https://blacket.org/worker/login', {
     headers: BASE_HEADERS,
     body: JSON.stringify({
       username,
       password,
+      code: code ? code.toString() : undefined,
     }),
     proxy,
     method: 'POST',

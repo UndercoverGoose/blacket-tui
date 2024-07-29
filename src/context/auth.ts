@@ -65,6 +65,13 @@ const reason_input = new Input('Enter Reason:', {
   placeholder: '...',
 });
 reason_input.component.y = 2;
+const code_input = new Input('Enter Code:', {
+  inline_header: true,
+  placeholder: '######',
+  is_valid: (s: string) => /^[0-9]{6}$/.test(s),
+  valid_func: s => Color.green(s),
+  invalid_func: s => Color.red(s),
+});
 
 export const states = {
   /**
@@ -121,7 +128,11 @@ export const states = {
       switch (account.type) {
         case 'credential': {
           state.notif_section.push(Color.white(`Logging in to ${Color.green(account.username)} with credentials...`));
-          const login_res = await v1.login(account.username, account.password);
+          let login_res = await v1.login(account.username, account.password);
+          if (login_res.error && login_res.reason === 'You must specify a code.') {
+            const code_res = await code_input.response_bind(state.terminal);
+            login_res = await v1.login(account.username, account.password, code_res);
+          }
           if (login_res.error) {
             state.notif_section.push_error(`Failed to validate credentials: ${login_res.reason}`, true);
             break;
