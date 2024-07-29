@@ -10,9 +10,10 @@ type AuthStatusResponse = {
  * @param token The token to check if authenticated.
  * @returns If the token is authenticated or not.
  */
-export default async function (token: string): Promise<AuthStatusResponse | FetchError> {
+export default async function (token: string, proxy?: string): Promise<AuthStatusResponse | FetchError> {
   const res = await fetch('https://blacket.org/worker2/auth-status', {
     headers: AUTH_HEADERS(token),
+    proxy,
     method: 'GET',
   });
   switch (res.status) {

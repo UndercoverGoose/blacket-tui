@@ -9,7 +9,7 @@ type APIResponse =
 
 const limit = new RateLimiter(900, true);
 
-export default async function (token: string, blook: string, quantity: number | string): Promise<APIResponse> {
+export default async function (token: string, blook: string, quantity: number | string, proxy?: string): Promise<APIResponse> {
   await limit.wait();
   try {
     const res = await fetch('https://blacket.org/worker/sell', {
@@ -18,6 +18,7 @@ export default async function (token: string, blook: string, quantity: number | 
         blook,
         quantity,
       }),
+      proxy,
       method: 'POST',
     });
     limit.hit();

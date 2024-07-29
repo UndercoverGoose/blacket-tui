@@ -67,11 +67,12 @@ let cached_data: UserResponse | null = null;
  * @param user_id The user to get information for. If not provided, it will get the information for the user associated with the token.
  * @returns The user's information if successful, or an error if not.
  */
-export default async function (token: string, user_id: number | string = '', use_cache = false): Promise<UserResponse | FetchError> {
+export default async function (token: string, user_id: number | string = '', use_cache = false, proxy?: string): Promise<UserResponse | FetchError> {
   if (use_cache && cached_data && !user_id) return cached_data;
   try {
     const res = await fetch(`https://blacket.org/worker2/user/${user_id}`, {
       headers: AUTH_HEADERS(token),
+      proxy,
       method: 'GET',
     });
     switch (res.status) {

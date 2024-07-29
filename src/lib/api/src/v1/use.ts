@@ -13,13 +13,14 @@ type APIResponse =
  * @param item The name of the item to use.
  * @returns If the item was used or not.
  */
-export default async function (token: string, item: string): Promise<APIResponse> {
+export default async function (token: string, item: string, proxy?: string): Promise<APIResponse> {
   try {
     const res = await fetch('https://blacket.org/worker/use', {
       headers: AUTH_HEADERS(token),
       body: JSON.stringify({
         item,
       }),
+      proxy,
       method: 'POST',
     });
     switch (res.status) {

@@ -11,10 +11,11 @@ type APIResponse =
  * Ping the Blacket server.
  * @returns The internal response time if successful, or an error if not.
  */
-export default async function (): Promise<APIResponse> {
+export default async function (proxy?: string): Promise<APIResponse> {
   try {
     const res = await fetch('https://blacket.org/worker/ping', {
       headers: BASE_HEADERS,
+      proxy,
       method: 'GET',
     });
     switch (res.status) {

@@ -6,7 +6,7 @@ type APIResponse =
       error: false;
     };
 
-export default async function (token: string, item: string, price: number | string): Promise<APIResponse> {
+export default async function (token: string, item: string, price: number | string, proxy?: string): Promise<APIResponse> {
   try {
     const res = await fetch('https://blacket.org/worker/bazaar/list', {
       headers: AUTH_HEADERS(token),
@@ -14,6 +14,7 @@ export default async function (token: string, item: string, price: number | stri
         item,
         price: price.toString(),
       }),
+      proxy,
       method: 'POST',
     });
     switch (res.status) {

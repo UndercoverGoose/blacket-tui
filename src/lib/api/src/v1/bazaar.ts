@@ -20,10 +20,11 @@ type APIResponse =
  * @param item_id Optional item id or user id to filter by.
  * @returns The bazaar items if successful, or an error if not.
  */
-export default async function (token: string, item_id: number | string): Promise<APIResponse> {
+export default async function (token: string, item_id: number | string, proxy?: string): Promise<APIResponse> {
   try {
     const res = await fetch(`https://blacket.org/worker/bazaar${item_id ? '/?item=' + item_id : ''}`, {
       headers: AUTH_HEADERS(token),
+      proxy,
       method: 'GET',
     });
     switch (res.status) {

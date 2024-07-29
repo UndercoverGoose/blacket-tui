@@ -7,13 +7,14 @@ type APIResponse =
       message: string;
     };
 
-export default async function (token: string, id: number): Promise<APIResponse> {
+export default async function (token: string, id: number, proxy?: string): Promise<APIResponse> {
   try {
     const res = await fetch('https://blacket.org/worker/bazaar/buy', {
       headers: AUTH_HEADERS(token),
       body: JSON.stringify({
         id,
       }),
+      proxy,
       method: 'POST',
     });
     switch (res.status) {

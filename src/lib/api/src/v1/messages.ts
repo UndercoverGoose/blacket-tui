@@ -49,10 +49,11 @@ type APIResponse =
  * @param count The amount of messages to get.
  * @returns The messages if successful, or an error if not.
  */
-export default async function (token: string, room: number | string, count = 250): Promise<APIResponse | FetchError> {
+export default async function (token: string, room: number | string, count = 250, proxy?: string): Promise<APIResponse | FetchError> {
   try {
     const res = await fetch(`https://blacket.org/worker2/messages/${room}?limit=${count}`, {
       headers: AUTH_HEADERS(token),
+      proxy,
       method: 'GET',
     });
     switch (res.status) {

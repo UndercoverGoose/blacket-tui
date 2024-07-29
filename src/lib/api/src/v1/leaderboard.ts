@@ -32,10 +32,11 @@ type APIResponse =
  * @param token Auth token.
  * @returns The leaderboard if successful, or an error if not.
  */
-export default async function (token: string): Promise<APIResponse> {
+export default async function (token: string, proxy?: string): Promise<APIResponse> {
   try {
     const res = await fetch('https://blacket.org/worker2/leaderboard', {
       headers: AUTH_HEADERS(token),
+      proxy,
       method: 'GET',
     });
     switch (res.status) {

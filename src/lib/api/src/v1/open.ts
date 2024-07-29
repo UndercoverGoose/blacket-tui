@@ -11,12 +11,13 @@ type APIResponse =
 
 const limit = new RateLimiter(700, true);
 
-export default async function (token: string, pack_name: string): Promise<APIResponse> {
+export default async function (token: string, pack_name: string, proxy?: string): Promise<APIResponse> {
   await limit.wait();
   try {
     const res = await fetch('https://blacket.org/worker3/open', {
       headers: AUTH_HEADERS(token),
       method: 'POST',
+      proxy,
       body: JSON.stringify({ pack: pack_name }),
     });
     limit.hit();

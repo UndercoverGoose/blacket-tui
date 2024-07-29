@@ -17,10 +17,11 @@ type TokenReward = {
  */
 const REWARDS = [500, 550, 600, 650, 700, 800, 900, 1000];
 
-export default async function (token: string): Promise<TokenReward | FetchError> {
+export default async function (token: string, proxy?: string): Promise<TokenReward | FetchError> {
   try {
     const res = await fetch('https://blacket.org/worker/claim', {
       headers: AUTH_HEADERS(token),
+      proxy,
       method: 'GET',
     });
     switch (res.status) {
