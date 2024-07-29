@@ -26,8 +26,9 @@ const root_select = new Select('Select an Authorization Method:', [
   '[0] Load Previous ',
   '[1] Add via Username/Password ',
   '[2] Add via Token ',
-  '[3] Set Proxy ',
-  '[4] Execute Script ',
+  '[3] Create Account ',
+  '[4] Set Proxy ',
+  '[5] Execute Script ',
 ]);
 const search = new Searchable('Select an Account:', []);
 const username_input = new Input('Enter Username:', {
@@ -45,6 +46,25 @@ const token_input = new Input('Enter Token:', {
   inline_header: true,
   placeholder: 'token',
 });
+const discord_input = new Input('Enter Discord Username (optional):', {
+  inline_header: true,
+  placeholder: 'username',
+});
+const age_input = new Input('Enter Age:', {
+  inline_header: true,
+  placeholder: '##',
+  is_valid: (s: string) => {
+    const age = Number(s);
+    return !(isNaN(age) || age.toString().includes('.') || age < 13 || age > 25);
+  },
+  valid_func: s => Color.green(s),
+  invalid_func: s => Color.red(s),
+});
+age_input.component.y = 1;
+const reason_input = new Input('Enter Reason:', {
+  placeholder: '...',
+});
+reason_input.component.y = 2;
 
 export const states = {
   /**
@@ -70,10 +90,14 @@ export const states = {
           break;
         }
         case 3: {
-          await proxy_context.root(state);
+          await states.create_account(state);
           break;
         }
         case 4: {
+          await proxy_context.root(state);
+          break;
+        }
+        case 5: {
           await scripts.root(state);
           break;
         }
@@ -105,6 +129,16 @@ export const states = {
           const token = login_res.token;
           state.notif_section.push_success('Logged in successfully.', true);
           if (!values.proxy && typeof account.proxy === 'number' && account.proxy >= 0) values.proxy = ProxyStore[account.proxy];
+
+          const account_id = account_map[account_index][0];
+          idfix: if (account_id.startsWith('pending')) {
+            const user_res = await v1.user(token);
+            if (user_res.error) break idfix;
+            const new_data = { ...Store[account_id] };
+            delete Store[account_id];
+            Store[user_res.user.id] = new_data;
+          }
+
           return token;
         }
         case 'token': {
@@ -195,5 +229,61 @@ export const states = {
       state.notif_section.push_success(`Saved credentials for ${Color.italic(user_res.user.username)}`);
       break;
     }
+  },
+  /**
+   * Prompts the user to create an account.
+   * @param state The current state.
+   */
+  create_account: async (state: State): Promise<void> => {
+    username_input.set_value('');
+    password_input.set_value('');
+    discord_input.set_value('');
+    age_input.set_value('');
+    reason_input.set_value('');
+    outer: while (true) {
+      state.terminal.pop(discord_input.component, age_input.component, reason_input.component);
+      state.terminal.push(username_input.component, password_input.component);
+      const username_res = await username_input.response();
+      if (username_res === '') break;
+      const password_res = await password_input.response();
+      if (password_res === '') break;
+      state.terminal.pop(username_input.component, password_input.component);
+      while (true) {
+        state.terminal.push(discord_input.component, age_input.component, reason_input.component);
+        const discord_res = await discord_input.response();
+        if (discord_res === '') break;
+        const age_res = await (async () => {
+          while (true) {
+            const res = await age_input.response();
+            if (res === '') return '';
+            if (!age_input.is_valid(res)) {
+              state.notif_section.push_error('Invalid age.');
+              continue;
+            }
+            return res;
+          }
+        })();
+        if (age_res === '') continue;
+        const reason_res = await reason_input.response();
+        if (reason_res === '') continue;
+
+        const register_res = await v1.register(username_res, password_res, discord_res, age_res, reason_res);
+        if (register_res.error) {
+          state.notif_section.push_error(register_res.reason);
+          continue;
+        }
+        state.notif_section.push_success('Account creation request sent.');
+        const pending_count = Object.keys(Store).filter(id => id.startsWith('pending')).length;
+        Store[`pending-${pending_count}`] = {
+          type: 'credential',
+          username: username_res,
+          password: password_res,
+        };
+        state.notif_section.push_success('Account saved as pending.');
+        break outer;
+      }
+    }
+    state.terminal.pop(username_input.component, password_input.component);
+    state.terminal.pop(discord_input.component, age_input.component, reason_input.component);
   },
 };
