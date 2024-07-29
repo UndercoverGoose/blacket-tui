@@ -65,6 +65,7 @@ import bazaar_buy from './bazaar_buy';
 import bazaar_remove from './bazaar_remove';
 import list from './list';
 import sell from './sell';
+import register from './register';
 
 export default {
   auth_status,
@@ -84,4 +85,5 @@ export default {
   bazaar_remove,
   list,
   sell,
+  register,
 };
