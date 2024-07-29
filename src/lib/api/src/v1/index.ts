@@ -41,7 +41,7 @@ export function AUTH_HEADERS(token: string) {
  * @param url The URL to proxy.
  * @returns The proxied URL.
  */
-export function fetch(input: URL | RequestInfo, init: RequestInit = {}) {
+export function fetch(input: URL | RequestInfo, init: FetchRequestInit = {}) {
   return globalThis.fetch(input, {
     proxy: values.proxy,
     ...init,
