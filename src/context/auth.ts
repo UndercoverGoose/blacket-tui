@@ -197,12 +197,16 @@ export const states = {
       const password_res = await password_input.response();
       if (password_res === '') break;
       set_text(Color.white('Testing credentials...'));
-      const res = await v1.login(username_res, password_res);
-      if (res.error) {
-        set_text(Color.red(`Failed to validate: ${res.reason}`), true);
+      let login_res = await v1.login(username_res, password_res);
+      if (login_res.error && login_res.reason === 'You must specify a code.') {
+        const code_res = await code_input.response_bind(state.terminal);
+        login_res = await v1.login(username_res, password_res, code_res);
+      }
+      if (login_res.error) {
+        set_text(Color.red(`Failed to validate: ${login_res.reason}`), true);
         continue;
       }
-      const token = res.token;
+      const token = login_res.token;
       set_text(Color.white('Fetching user id...'));
 
       const user_res = await v1.user(token);
