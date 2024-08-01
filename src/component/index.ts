@@ -4,5 +4,6 @@ import Notification from './notification';
 import Searchable from './searchable';
 import Tokens from './tokens';
 import Booster from './booster';
+import User from './user';
 
-export { Input, Select, Notification, Searchable, Tokens, Booster };
+export { Input, Select, Notification, Searchable, Tokens, Booster, User };
