@@ -27,10 +27,10 @@ export const states = {
     }
     if (user_res.is_foreign) throw new Error('User is not allowed to be `is_foreign`');
     status_text.text = '';
-    const inventory = user_res.user.inventory;
-    const inventory_mapped: Record<string, number> = {};
-    for (const item of inventory) inventory_mapped[item] = (inventory_mapped[item] ?? 0) + 1;
     while (true) {
+      const inventory = user_res.user.inventory;
+      const inventory_mapped: Record<string, number> = {};
+      for (const item of inventory) inventory_mapped[item] = (inventory_mapped[item] ?? 0) + 1;
       const options = Object.entries(inventory_mapped);
       if (inventory.length > 0) {
         item_select.set_options(options.map(([k, v], idx) => `[${idx}] ${k} x${v} `));
