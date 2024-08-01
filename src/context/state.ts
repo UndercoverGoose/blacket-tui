@@ -1,4 +1,4 @@
-import type { Booster, Notification, Tokens } from '@component/.';
+import type { Booster, Notification, Tokens, User } from '@component/.';
 import type { Terminal } from '@lib/tui';
 
 export type State = {
@@ -7,4 +7,5 @@ export type State = {
   notif_section: Notification;
   tokens: Tokens;
   booster: Booster;
+  user_header: User;
 };

@@ -1,5 +1,4 @@
-import { type Terminal } from '@lib/tui';
-import { Select, Notification, Tokens, Booster } from '@component/.';
+import { Select } from '@component/.';
 import { states as leaderboard } from '@ctx/leaderboard';
 import { states as inventory } from '@ctx/inventory';
 import market from '@ctx/market';
@@ -7,6 +6,7 @@ import { states as statistics } from '@ctx/statistics';
 import { states as blooks } from '@ctx/blooks';
 import { states as bazaar } from '@ctx/bazaar';
 import { states as scripts } from '@ctx/scripts';
+import type { State } from '@ctx/state';
 
 const root_select = new Select(
   'Select a page to view:',
@@ -35,16 +35,9 @@ const root_select = new Select(
  * @param notif_section The global notification component
  * @param tokens The global tokens component
  */
-export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens, booster: Booster): Promise<void> {
+export default async function (state: State): Promise<void> {
   while (true) {
-    const state = {
-      terminal,
-      token,
-      notif_section,
-      tokens,
-      booster,
-    };
-    switch (await root_select.response_bind(terminal)) {
+    switch (await root_select.response_bind(state.terminal)) {
       case 0: {
         await statistics.root(state);
         break;
@@ -54,7 +47,7 @@ export default async function (terminal: Terminal, token: string, notif_section:
         break;
       }
       case 4: {
-        await market(terminal, token, notif_section, tokens, booster);
+        await market(state.terminal, state.token, state.notif_section, state.tokens, state.booster);
         break;
       }
       case 5: {
