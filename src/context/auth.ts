@@ -125,7 +125,8 @@ export const states = {
     while (true) {
       const account_index = await search.response_bind(state.terminal);
       if (account_index === -1) return null;
-      const account = Store[account_map[account_index][0]];
+      let account_id = account_map[account_index][0];
+      const account = Store[account_id];
       switch (account.type) {
         case 'credential': {
           state.notif_section.push(Color.white(`Logging in to ${Color.green(account.username)} with credentials...`));
@@ -138,7 +139,8 @@ export const states = {
             return account.token;
           }
 
-          let login_res = await v1.login(account.username, account.password);
+          let login_username = account_id.startsWith('pending') ? account.username : account_id;
+          let login_res = await v1.login(login_username, account.password);
           if (login_res.error && login_res.reason === 'You must specify a code.') {
             code_input.set_value('');
             const code_res = await code_input.response_bind(state.terminal);
@@ -152,7 +154,6 @@ export const states = {
           state.notif_section.push_success('Logged in successfully.', true);
           if (!values.proxy && typeof account.proxy === 'number' && account.proxy >= 0) values.proxy = ProxyStore[account.proxy];
 
-          let account_id = account_map[account_index][0];
           idfix: if (account_id.startsWith('pending')) {
             const user_res = await v1.user(token);
             if (user_res.error) break idfix;
