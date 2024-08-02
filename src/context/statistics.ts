@@ -10,7 +10,7 @@ import type { State } from '@ctx/state';
 
 const status_text = new Text(0, 0, '');
 const stat_text = new Text(0, 6, '');
-const root_select_choices = ['[0] View Stats ', '[1] Trade Player ', '[2] Manage Friends ', '[3] Claim Daily Reward '];
+const root_select_choices = ['-> View Stats ', '-> Trade Player ', '-> Manage Friends ', '-> Claim Daily Reward '];
 const root_select = new Select('Select an action to perform:', root_select_choices, {
   disabled_indexes: [1, 4],
 });
@@ -18,7 +18,7 @@ const user_input = new Input('Enter the username or ID of the player:', {
   placeholder: 'Username or ID',
 });
 const friend_search = new Searchable('Select a friend for more options:', []);
-const friend_select = new Select('Select an action to perform:', ['[0] View Stats ', '[1] Send Trade Request ', '[2] Unfriend ', '[3] Block '], {
+const friend_select = new Select('Select an action to perform:', ['-> View Stats ', '-> Send Trade Request ', '-> Unfriend ', '-> Block '], {
   disabled_indexes: [1, 2, 3],
   header_func: s => s,
 });

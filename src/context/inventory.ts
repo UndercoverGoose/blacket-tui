@@ -6,7 +6,7 @@ import type { State } from '@ctx/state';
 
 const status_text = new Text(0, 0, '');
 const item_select = new Select('Select an item to view:', []);
-const action_select = new Select('Select an action to perform:', ['[0] Use Item ', '[1] List Item ']);
+const action_select = new Select('Select an action to perform:', ['-> Use Item ', '-> List Item ']);
 const list_input = new Input('Enter the price to list at:', {
   mutate: (v: string) => ` ${v} ` + Color.reset(Color.bright_black(' = '), Color.yellow(Number(v.replaceAll(',', '')).toLocaleString(), ' tokens')),
 });
@@ -33,7 +33,7 @@ export const states = {
       for (const item of inventory) inventory_mapped[item] = (inventory_mapped[item] ?? 0) + 1;
       const options = Object.entries(inventory_mapped);
       if (inventory.length > 0) {
-        item_select.set_options(options.map(([k, v], idx) => `[${idx}] ${k} x${v} `));
+        item_select.set_options(options.map(([k, v]) => `-> ${k} x${v} `));
         item_select.set_disabled_indexes([]);
       } else {
         item_select.set_options([Color.bright_black('No items in inventory.')]);

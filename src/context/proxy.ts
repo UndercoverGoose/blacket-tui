@@ -6,7 +6,7 @@ import type { State } from '@ctx/state';
 
 export const Store: string[] = await new Dynamic<string[]>('proxy.json', []).setup();
 
-const root_select = new Select('Select an action to perform:', ['[0] Load Previous ', '[1] Add Proxy ', '[2] Remove Proxy ']);
+const root_select = new Select('Select an action to perform:', ['-> Load Previous ', '-> Add Proxy ', '-> Remove Proxy ']);
 const proxy_search = new Searchable('Select a Proxy:', []);
 const proxy_input = new Input('Enter Proxy URL:', {});
 

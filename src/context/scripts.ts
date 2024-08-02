@@ -28,15 +28,15 @@ export const states = {
       while (true) {
         const fileNames = readdirSync(`${process.cwd()}/scripts/`);
         if (fileNames.length === 0) return;
-        root_search.set_choices(fileNames);
-        const script = await root_search.response_bind(state.terminal);
-        if (script === -1) return;
+        root_search.set_choices(fileNames.map(name => `-> ${name}`));
+        const script_idx = await root_search.response_bind(state.terminal);
+        if (script_idx === -1) return;
         // the script needs imported and the main function executed
         try {
-          const scriptSrc: ModuleExports = await import(`${process.cwd()}/scripts/${fileNames[script]}`);
+          const scriptSrc: ModuleExports = await import(`${process.cwd()}/scripts/${fileNames[script_idx]}`);
           const meta = scriptSrc.META;
           const entry = scriptSrc.main;
-          root_select.set_question(`Select an action to perform on '${Color.bold(fileNames[script])}':`);
+          root_select.set_question(`Select an action to perform on '${Color.bold(fileNames[script_idx])}':`);
           root_select.set_options([
             Color.blue(
               'author ',
@@ -48,7 +48,7 @@ export const states = {
               'source ',
               meta?.source ? Color.bold(meta.source) : Color.bright_black('unspecified')
             ),
-            '[1] Execute ',
+            '-> Execute ',
           ]);
           root_select.set_selected_index(1);
           if (!entry) root_select.set_disabled_indexes([0, 1]);
@@ -65,7 +65,7 @@ export const states = {
               try {
                 await entry(state);
               } catch (err) {
-                state.notif_section.push_error(`[${fileNames[script]}] ${err}`);
+                state.notif_section.push_error(`[${fileNames[script_idx]}] ${err}`);
               }
               break;
             }

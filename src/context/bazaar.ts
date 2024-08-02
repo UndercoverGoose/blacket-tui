@@ -7,11 +7,11 @@ import type { BazaarItem } from '@lib/api/src/v1/bazaar';
 import type { State } from '@ctx/state';
 
 const root_select = new Select('Select an option:', [
-  '[0] View Listings ',
-  '[1] Raw Search',
-  '[2] Search for Blook ',
-  '[3] Search for Missing Blook ',
-  '[4] Search by User ',
+  '-> View Listings ',
+  '-> Raw Search',
+  '-> Search for Blook ',
+  '-> Search for Missing Blook ',
+  '-> Search by User ',
 ]);
 const listing_search = new Searchable('Select an item:', []);
 const blook_search = new Searchable('Select a blook:', []);

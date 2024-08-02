@@ -12,12 +12,12 @@ const root_text = new Text(0, 0, '');
 const root_select = new Select(
   'Select an option:',
   [
-    '[0] View All Obtained Blooks ',
-    '[1] View Obtained by Pack ',
-    '[2] View Missing Blooks ',
-    '[3] View Missing by Pack ',
-    '[4] View All Blooks ',
-    '[5] Sell All Blooks ',
+    '-> View All Obtained Blooks ',
+    '-> View Obtained by Pack ',
+    '-> View Missing Blooks ',
+    '-> View Missing by Pack ',
+    '-> View All Blooks ',
+    '-> Sell All Blooks ',
   ],
   {
     disabled_indexes: [5],
@@ -25,7 +25,7 @@ const root_select = new Select(
 );
 const pack_select = new Searchable('Select a pack:', []);
 const blook_search = new Searchable('Select a blook:', []);
-const action_select = new Select('', ['[0] List Blook ', '[1] Sell Blook ']);
+const action_select = new Select('', ['-> List Blook ', '-> Sell Blook ']);
 let mm_input = 1;
 const input = new Input('Enter the amount to sell:', {
   default_value: '1',

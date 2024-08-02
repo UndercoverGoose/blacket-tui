@@ -24,12 +24,13 @@ type Store = {
 const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
 
 const root_select = new Select('Select an Authorization Method:', [
-  '[0] Load Previous ',
-  '[1] Add via Username/Password ',
-  '[2] Add via Token ',
-  '[3] Create Account ',
-  '[4] Set Proxy ',
-  '[5] Execute Script ',
+  '-> Load Previous ',
+  '-> Load Previous (Offline) ',
+  '-> Add via Username/Password ',
+  '-> Add via Token ',
+  '-> Create Account ',
+  '-> Set Proxy ',
+  '-> Execute Script ',
 ]);
 const search = new Searchable('Select an Account:', []);
 const username_input = new Input('Enter Username:', {
@@ -83,29 +84,30 @@ export const states = {
   root: async (state: State): Promise<string> => {
     let token: string | null = null;
     while (!token) {
-      root_select.set_disabled_indexes([Object.keys(Store).length === 0 ? 0 : -1]);
+      root_select.set_disabled_indexes([...(Object.keys(Store).length === 0 ? [0, 1] : [0])]);
       switch (await root_select.response_bind(state.terminal)) {
-        case 0: {
+        case 0:
+        case 1: {
           token = await states.load_previous(state);
           break;
         }
-        case 1: {
+        case 2: {
           await states.add_via_pass(state);
           break;
         }
-        case 2: {
+        case 3: {
           await states.add_via_token(state);
           break;
         }
-        case 3: {
+        case 4: {
           await states.create_account(state);
           break;
         }
-        case 4: {
+        case 5: {
           await proxy_context.root(state);
           break;
         }
-        case 5: {
+        case 6: {
           await scripts.root(state);
           break;
         }
@@ -120,7 +122,7 @@ export const states = {
    */
   load_previous: async (state: State): Promise<string | null> => {
     const account_map = Object.entries(Store).map(([k, v]) => [k, v.username]);
-    const account_names = account_map.map(([id, name], idx) => `[${idx}] ${name} - ${id} `);
+    const account_names = account_map.map(([id, name]) => `-> ${name} - ${id} `);
     search.set_choices(account_names);
     while (true) {
       const account_index = await search.response_bind(state.terminal);
