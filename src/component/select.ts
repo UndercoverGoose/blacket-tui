@@ -61,12 +61,12 @@ export default class Select {
       if (!this.resolve_func) return false;
       switch (key) {
         case 'arrow:up': {
-          this.set_selected_index(Math.max(0, this.selected_index - 1), true);
+          this.set_selected_index(this.selected_index - 1, true);
           this.component.attached_terminal?.write_buffer();
           return true;
         }
         case 'arrow:down': {
-          this.set_selected_index(Math.min(this.choices.length - 1, this.selected_index + 1));
+          this.set_selected_index(this.selected_index + 1);
           this.component.attached_terminal?.write_buffer();
           return true;
         }
@@ -113,6 +113,16 @@ export default class Select {
    */
   set_selected_index(selected_index: number, _is_up?: true) {
     this.selected_index = selected_index;
+    if (_is_up && selected_index < 0) {
+      this.selected_index = this.choices.length - 1;
+      this.set_to_next_available_index_reverse();
+      return this.update_component();
+    }
+    if (!_is_up && selected_index > this.choices.length - 1) {
+      this.selected_index = 0;
+      this.set_to_next_available_index();
+      return this.update_component();
+    }
     if (this.disabled_indexes.includes(selected_index)) {
       if (_is_up) this.set_to_next_available_index_reverse();
       else this.set_to_next_available_index();
