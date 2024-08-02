@@ -1,4 +1,4 @@
-import { BASE_HEADERS, type FetchError, fetch } from '.';
+import { type FetchError, get } from '.';
 
 type APIResponse =
   | FetchError
@@ -12,30 +12,5 @@ type APIResponse =
  * @returns The internal response time if successful, or an error if not.
  */
 export default async function (proxy?: string): Promise<APIResponse> {
-  try {
-    const res = await fetch('https://blacket.org/worker/ping', {
-      headers: BASE_HEADERS,
-      proxy,
-      method: 'GET',
-    });
-    switch (res.status) {
-      case 200: {
-        const json = (await res.json()) as APIResponse;
-        return json;
-      }
-      default: {
-        return {
-          error: true,
-          reason: `Unexpected status code: ${res.status}.`,
-          internal: true,
-        };
-      }
-    }
-  } catch (err) {
-    return {
-      error: true,
-      reason: `Fetch Error: ${err}`,
-      internal: true,
-    };
-  }
+  return get<APIResponse>('worker', 'ping', null, proxy);
 }

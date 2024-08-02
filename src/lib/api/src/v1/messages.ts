@@ -1,4 +1,4 @@
-import { AUTH_HEADERS, type FetchError, fetch } from '.';
+import { type FetchError, get } from '.';
 
 type Message = {
   message: {
@@ -49,31 +49,6 @@ type APIResponse =
  * @param count The amount of messages to get.
  * @returns The messages if successful, or an error if not.
  */
-export default async function (token: string, room: number | string, count = 250, proxy?: string): Promise<APIResponse | FetchError> {
-  try {
-    const res = await fetch(`https://blacket.org/worker2/messages/${room}?limit=${count}`, {
-      headers: AUTH_HEADERS(token),
-      proxy,
-      method: 'GET',
-    });
-    switch (res.status) {
-      case 200: {
-        const json = (await res.json()) as APIResponse;
-        return json;
-      }
-      default: {
-        return {
-          error: true,
-          reason: `Unexpected status code: ${res.status}.`,
-          internal: true,
-        };
-      }
-    }
-  } catch (err) {
-    return {
-      error: true,
-      reason: `Fetch Error: ${err}`,
-      internal: true,
-    };
-  }
+export default async function (token: string, room: number | string, count = 250, proxy?: string): Promise<APIResponse> {
+  return get<APIResponse>('worker2', `messages/${room}?limit=${count}`, token, proxy);
 }

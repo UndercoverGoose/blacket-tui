@@ -1,4 +1,4 @@
-import { AUTH_HEADERS, type FetchError, fetch } from '.';
+import { type FetchError, get } from '.';
 
 type AuthStatusResponse = {
   error: false;
@@ -11,42 +11,29 @@ type AuthStatusResponse = {
  * @returns If the token is authenticated or not.
  */
 export default async function (token: string, proxy?: string): Promise<AuthStatusResponse | FetchError> {
-  const res = await fetch('https://blacket.org/worker2/auth-status', {
-    headers: AUTH_HEADERS(token),
-    proxy,
-    method: 'GET',
-  });
-  switch (res.status) {
-    case 200: {
-      const num = Number(await res.text());
-      switch (num) {
-        case 0: {
-          return {
-            error: false,
-            authed: false,
-          };
-        }
-        case 1: {
-          return {
-            error: false,
-            authed: true,
-          };
-        }
-        default: {
-          return {
-            error: true,
-            reason: `Unexpected response: ${num}`,
-            internal: true,
-          };
-        }
+  const res = await get<0 | 1 | FetchError>('worker2', 'auth-status', token, proxy);
+  if (typeof res === 'number') {
+    switch (res) {
+      case 0: {
+        return {
+          error: false,
+          authed: false,
+        };
+      }
+      case 1: {
+        return {
+          error: false,
+          authed: true,
+        };
+      }
+      default: {
+        return {
+          error: true,
+          reason: `Unexpected response: ${res}`,
+          internal: true,
+        };
       }
     }
-    default: {
-      return {
-        error: true,
-        reason: `Unexpected status code: ${res.status}`,
-        internal: true,
-      };
-    }
   }
+  return res;
 }
