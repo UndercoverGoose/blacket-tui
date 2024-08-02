@@ -111,7 +111,7 @@ export const states = {
     }
     status_text.text = Color.yellow('Listing item...');
     state.terminal.push(status_text);
-    const list_res = await v1.list(state.token, item_name, tokens);
+    const list_res = await new v1.bazaar(state.token).list(item_name, tokens);
     status_text.text = '';
     state.terminal.pop(status_text);
     if (list_res.error) state.notif_section.push_error(list_res.reason);

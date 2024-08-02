@@ -48,6 +48,83 @@ export function fetch(input: URL | RequestInfo, init: FetchRequestInit = {}) {
   });
 }
 
+/**
+ * Send a POST request to the API.
+ * @param base_path The base path to the API.
+ * @param endpoint The endpoint to send the request to.
+ * @param token The token to authenticate with.
+ * @param proxy The proxy to use.
+ * @param data The data to send.
+ * @returns The response from the API.
+ */
+export async function post<T>(base_path: string, endpoint: string, token: string, proxy: string | undefined, data?: Object): Promise<T> {
+  try {
+    const res = await fetch(`https://blacket.org/${base_path}/${endpoint}`, {
+      headers: AUTH_HEADERS(token),
+      body: JSON.stringify(data),
+      proxy,
+      method: 'POST',
+    });
+    switch (res.status) {
+      case 200: {
+        const json = (await res.json()) as T;
+        return json;
+      }
+      default: {
+        return {
+          error: true,
+          reason: `Unexpected status code: ${res.status}.`,
+          internal: true,
+        } as T;
+      }
+    }
+  } catch (err) {
+    return {
+      error: true,
+      reason: `Fetch Error: ${err}`,
+      internal: true,
+    } as T;
+  }
+}
+
+/**
+ * Send a GET request to the API.
+ * @param base_path The base path to the API.
+ * @param endpoint The endpoint to send the request to.
+ * @param token The token to authenticate with.
+ * @param proxy The proxy to use.
+ * @param data The data to send.
+ * @returns The response from the API.
+ */
+export async function get<T>(base_path: string, endpoint: string, token: string, proxy: string | undefined, data?: Object): Promise<T> {
+  try {
+    const res = await fetch(`https://blacket.org/${base_path}/${endpoint}`, {
+      headers: AUTH_HEADERS(token),
+      proxy,
+      body: JSON.stringify(data),
+    });
+    switch (res.status) {
+      case 200: {
+        const json = (await res.json()) as T;
+        return json;
+      }
+      default: {
+        return {
+          error: true,
+          reason: `Unexpected status code: ${res.status}.`,
+          internal: true,
+        } as T;
+      }
+    }
+  } catch (err) {
+    return {
+      error: true,
+      reason: `Fetch Error: ${err}`,
+      internal: true,
+    } as T;
+  }
+}
+
 import auth_status from './auth-status';
 import bazaar from './bazaar';
 import claim from './claim';
@@ -61,11 +138,9 @@ import user from './user';
 import use from './use';
 import open from './open';
 import buy from './buy';
-import bazaar_buy from './bazaar_buy';
-import bazaar_remove from './bazaar_remove';
-import list from './list';
 import sell from './sell';
 import register from './register';
+import settings from './settings';
 
 export default {
   auth_status,
@@ -81,9 +156,7 @@ export default {
   use,
   open,
   buy,
-  bazaar_buy,
-  bazaar_remove,
-  list,
   sell,
   register,
+  settings,
 };

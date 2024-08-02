@@ -192,7 +192,7 @@ export const states = {
       state.terminal.push(stat_text);
     }
     let exited = false;
-    v1.bazaar(state.token, blook_name).then(res => {
+    new v1.bazaar(state.token).search(blook_name).then(res => {
       if (res.error) return state.notif_section.push_error(res.reason);
       if (exited) return;
       const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
@@ -205,7 +205,7 @@ export const states = {
       exited = true;
       return;
     }
-    const list_res = await v1.list(state.token, blook_name, price);
+    const list_res = await new v1.bazaar(state.token).list(blook_name, price);
     if (list_res.error) {
       state.notif_section.push_error(list_res.reason);
       state.terminal.pop(stat_text);
@@ -232,7 +232,7 @@ export const states = {
       );
       state.terminal.push(stat_text);
     }
-    v1.bazaar(state.token, blook_name).then(res => {
+    new v1.bazaar(state.token).search(blook_name).then(res => {
       if (res.error) return state.notif_section.push_error(res.reason);
       const cheapest = res.bazaar.filter(b => b.item === blook_name)[0];
       if (!cheapest) stat_text.text += Color.yellow('\nNo listing found on the bazaar.');

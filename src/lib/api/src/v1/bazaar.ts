@@ -1,4 +1,4 @@
-import { AUTH_HEADERS, type FetchError, fetch } from '.';
+import { type FetchError, post, get } from '.';
 
 export type BazaarItem = {
   id: number;
@@ -7,44 +7,79 @@ export type BazaarItem = {
   seller: string;
   date: number;
 };
-type APIResponse =
-  | FetchError
-  | {
-      error: false;
-      bazaar: BazaarItem[];
-    };
 
-/**
- * Get listed bazaar items.
- * @param token Auth token.
- * @param item_id Optional item id or user id to filter by.
- * @returns The bazaar items if successful, or an error if not.
- */
-export default async function (token: string, item_id: number | string, proxy?: string): Promise<APIResponse> {
-  try {
-    const res = await fetch(`https://blacket.org/worker/bazaar${item_id ? '/?item=' + item_id : ''}`, {
-      headers: AUTH_HEADERS(token),
-      proxy,
-      method: 'GET',
+type APIResponse = FetchError | { error: false };
+type APIResponse_Items = FetchError | { error: false; bazaar: BazaarItem[] };
+
+export default class {
+  private token: string;
+  private proxy: string | undefined;
+  /**
+   * Create a new bazaar API instance.
+   * @param token The API token.
+   * @param proxy The proxy URL.
+   */
+  constructor(token: string, proxy?: string) {
+    this.token = token;
+    this.proxy = proxy;
+  }
+  /**
+   * Search the bazaar for listings.
+   * @param query The item name to search for or user ID to search by. Searching by item name is not guaranteed to include only the listings for that item.
+   * @returns The bazaar items if successful, or an error if not.
+   */
+  async search(query?: number | string): Promise<APIResponse_Items> {
+    if (!query) return this.get();
+    return this.get('?item=' + query);
+  }
+  /**
+   * List an item on the bazaar.
+   * @param item The item to list.
+   * @param price The price to list the item for.
+   * @returns Whether or not the item was successfully listed.
+   */
+  async list(item: string, price: number | string): Promise<APIResponse> {
+    return this.post('list', {
+      item,
+      price: price.toString(),
     });
-    switch (res.status) {
-      case 200: {
-        const json = (await res.json()) as APIResponse;
-        return json;
-      }
-      default: {
-        return {
-          error: true,
-          reason: `Unexpected status code: ${res.status}.`,
-          internal: true,
-        };
-      }
-    }
-  } catch (err) {
-    return {
-      error: true,
-      reason: `Fetch Error: ${err}`,
-      internal: true,
-    };
+  }
+  /**
+   * Delist an item from the bazaar.
+   * @param listing_id The ID of the listing to delist.
+   * @returns Whether or not the item was successfully delisted.
+   */
+  async delist(listing_id: number): Promise<APIResponse> {
+    return this.post('remove', {
+      id: listing_id,
+    });
+  }
+  /**
+   * Buy an item from the bazaar.
+   * @param listing_id The ID of the listing to buy.
+   * @returns Whether or not the item was successfully purchased.
+   */
+  async buy(listing_id: number): Promise<APIResponse> {
+    return this.post('buy', {
+      id: listing_id,
+    });
+  }
+  /**
+   * Internal method to make a POST request to the clans API.
+   * @param endpoint The endpoint to make the request to.
+   * @param data The data to send with the request.
+   * @returns The response from the API.
+   */
+  private async post<T = APIResponse>(endpoint = '', data?: Object): Promise<T> {
+    return post<T>('worker/bazaar', endpoint, this.token, this.proxy, data);
+  }
+  /**
+   * Internal method to make a GET request to the clans API.
+   * @param endpoint The endpoint to make the request to.
+   * @param data The data to send with the request.
+   * @returns The response from the API.
+   */
+  private async get<T = APIResponse>(endpoint = '', data?: Object): Promise<T> {
+    return get<T>('worker/bazaar', endpoint, this.token, this.proxy, data);
   }
 }

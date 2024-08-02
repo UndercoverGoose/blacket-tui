@@ -84,7 +84,7 @@ export const states = {
     input.set_value('');
     const input_res = await input.response_bind(state.terminal);
     if (input_res === '') return;
-    const listings = await v1.bazaar(state.token, input_res);
+    const listings = await new v1.bazaar(state.token).search(input_res);
     if (listings.error) return state.notif_section.push_error(listings.reason);
     await states.view_listings(state, listings.bazaar);
   },
@@ -99,7 +99,7 @@ export const states = {
       const blook_index = await blook_search.response_bind(state.terminal);
       if (blook_index === -1) break;
       const blook_name = blook_options[blook_index];
-      const listings = await v1.bazaar(state.token, blook_name);
+      const listings = await new v1.bazaar(state.token).search(blook_name);
       if (listings.error) {
         state.notif_section.push_error(listings.reason);
         break;
@@ -123,7 +123,7 @@ export const states = {
       if (user_res.error) return state.notif_section.push_error(user_res.reason);
       user_id = user_res.user.id;
     }
-    const listings = await v1.bazaar(state.token, user_id);
+    const listings = await new v1.bazaar(state.token).search(user_id);
     if (listings.error) return state.notif_section.push_error(listings.reason);
     await states.view_listings(state, listings.bazaar, user_is_self);
   },
@@ -159,7 +159,7 @@ export const states = {
       case -1:
         return;
       case 0: {
-        const delist_res = await v1.bazaar_remove(state.token, item.id);
+        const delist_res = await new v1.bazaar(state.token).delist(item.id);
         if (delist_res.error) return state.notif_section.push_error(delist_res.reason);
         state.notif_section.push_success('Item delisted successfully.');
         return item.id;
@@ -200,7 +200,7 @@ export const states = {
           break;
         }
         case 1: {
-          const buy_res = await v1.bazaar_buy(state.token, item.id);
+          const buy_res = await new v1.bazaar(state.token).buy(item.id);
           if (buy_res.error) {
             state.notif_section.push_error(buy_res.reason);
             break;
