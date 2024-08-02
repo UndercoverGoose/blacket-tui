@@ -57,10 +57,10 @@ export function fetch(input: URL | RequestInfo, init: FetchRequestInit = {}) {
  * @param data The data to send.
  * @returns The response from the API.
  */
-export async function post<T>(base_path: string, endpoint: string, token: string, proxy: string | undefined, data?: Object): Promise<T> {
+export async function post<T>(base_path: string, endpoint: string, token?: string | null, proxy?: string, data?: Object): Promise<T> {
   try {
     const res = await fetch(`https://blacket.org/${base_path}/${endpoint}`, {
-      headers: AUTH_HEADERS(token),
+      headers: token ? AUTH_HEADERS(token) : BASE_HEADERS,
       body: JSON.stringify(data),
       proxy,
       method: 'POST',
@@ -96,10 +96,10 @@ export async function post<T>(base_path: string, endpoint: string, token: string
  * @param data The data to send.
  * @returns The response from the API.
  */
-export async function get<T>(base_path: string, endpoint: string, token: string, proxy: string | undefined, data?: Object): Promise<T> {
+export async function get<T>(base_path: string, endpoint: string, token?: string | null, proxy?: string, data?: Object): Promise<T> {
   try {
     const res = await fetch(`https://blacket.org/${base_path}/${endpoint}`, {
-      headers: AUTH_HEADERS(token),
+      headers: token ? AUTH_HEADERS(token) : BASE_HEADERS,
       proxy,
       body: JSON.stringify(data),
     });
