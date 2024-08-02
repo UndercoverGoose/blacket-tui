@@ -4,7 +4,16 @@ type APIResponse = FetchError | { error: false };
 
 export default class {
   private token: string;
-  private proxy: string | undefined;
+  private _proxy?: string;
+  private _once_proxy?: string;
+  get proxy() {
+    if (this._once_proxy) {
+      const proxy = this._once_proxy;
+      this._once_proxy = undefined;
+      return proxy;
+    }
+    return this._proxy;
+  }
   /**
    * Create a new settings API instance.
    * @param token Auth token.
@@ -12,7 +21,16 @@ export default class {
    */
   constructor(token: string, proxy?: string) {
     this.token = token;
-    this.proxy = proxy;
+    this._proxy = proxy;
+  }
+  /**
+   * Define a proxy URL to use for a single request.
+   * @param proxy The proxy URL.
+   * @returns The API instance for chaining.
+   */
+  once(proxy?: string) {
+    this._once_proxy = proxy;
+    return this;
   }
   /**
    * Set who is allowed to send trade requests to this user.
