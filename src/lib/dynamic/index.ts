@@ -22,7 +22,7 @@ export class Dynamic<T extends Object> {
   private v_proxy(v: any): any {
     return new Proxy(v, {
       set: (t, p, v) => {
-        if (typeof v === 'object') v = this.vr_proxy(v);
+        if (typeof v === 'object' && v !== null) v = this.vr_proxy(v);
         (t as any)[p] = v;
         this.write();
         return true;
@@ -30,7 +30,7 @@ export class Dynamic<T extends Object> {
     });
   }
   private vr_proxy(v: any): any {
-    for (const key in v) if (typeof v[key] === 'object') v[key] = this.vr_proxy(v[key]);
+    for (const key in v) if (typeof v[key] === 'object' && v[key] !== null) v[key] = this.vr_proxy(v[key]);
     return this.v_proxy(v);
   }
   private async write(): Promise<void> {
