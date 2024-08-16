@@ -8,9 +8,21 @@ export default class Tokens {
   end_time = 0;
   constructor() {
     this.update_component();
-
-    setInterval(() => this.refresh(), 10000);
-    this.refresh();
+    this.refresh_loop();
+  }
+  private async refresh_loop() {
+    for (;;) {
+      await this.refresh();
+      if (this.multiplier === 0) {
+        await Bun.sleep(10000);
+        continue;
+      }
+      if (Date.now() > this.end_time) {
+        await Bun.sleep(4000);
+        continue;
+      }
+      await Bun.sleep(new Date(this.end_time + 60000));
+    }
   }
   private async refresh() {
     const res = await v1.data();
