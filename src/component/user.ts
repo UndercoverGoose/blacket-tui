@@ -2,7 +2,7 @@ import Color from '@lib/color';
 import { Text } from '@lib/tui';
 import type { User } from '@lib/api/src/v1/user';
 
-export default class Tokens {
+export default class {
   component = new Text(-1, 1, '', 1, -1);
   user: User | null = null;
   constructor() {
@@ -10,6 +10,9 @@ export default class Tokens {
   }
   set_user(user: User) {
     this.user = user;
+    this.update_component();
+  }
+  refresh_display() {
     this.update_component();
   }
   private update_component() {
