@@ -7,13 +7,13 @@ import v1 from '@lib/api';
 type Store = {
   [key: string]: { username: string } & (
     | {
-        type: 'credential';
-        password: string;
-      }
+      type: 'credential';
+      password: string;
+    }
     | {
-        type: 'token';
-        token: string;
-      }
+      type: 'token';
+      token: string;
+    }
   );
 };
 const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
@@ -84,7 +84,9 @@ export default async function (terminal: Terminal, notif_section: Notification):
                 set_text(Color.red(`Failed to validate token: ${state.reason}`), true);
                 break auth2;
               }
-              break;
+              set_text(Color.green('Logged in successfully.'), true);
+              terminal.pop(lo_text);
+              return account.token;
             }
           }
         }
