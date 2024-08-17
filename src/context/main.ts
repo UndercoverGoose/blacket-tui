@@ -6,6 +6,7 @@ import { states as statistics } from '@ctx/statistics';
 import { states as blooks } from '@ctx/blooks';
 import { states as bazaar } from '@ctx/bazaar';
 import { states as scripts } from '@ctx/scripts';
+import { states as settings } from '@ctx/settings';
 import type { State } from '@ctx/state';
 
 const root_select = new Select(
@@ -24,7 +25,7 @@ const root_select = new Select(
     '-> Scripts ',
   ],
   {
-    disabled_indexes: [2, 3, 8, 9],
+    disabled_indexes: [2, 3, 9],
   }
 );
 
@@ -60,6 +61,10 @@ export default async function (state: State): Promise<void> {
       }
       case 7: {
         await inventory.root(state);
+        break;
+      }
+      case 8: {
+        await settings.root(state);
         break;
       }
       case 10: {
