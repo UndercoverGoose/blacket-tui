@@ -1,472 +1,570 @@
-import { type Terminal, Text } from '@lib/tui';
 import v1 from '@lib/api';
 import Color from '@lib/color';
-import { Select, Notification, Searchable, Tokens, Booster } from '@component/.';
+import { Select, Searchable, Configure } from '@component/.';
+import type { Data } from '@lib/api/src/v1/data';
+import type { Schema } from '@component/configure';
+import type { State } from '@ctx/state';
 
-const text = new Text(0, 0, '');
-const select = new Select('Select a page to view:', ['[0] Packs ', '[1] Items & Weekly Shop ']);
-const select2 = new Searchable('Select a pack to view:', []);
-select2.component.v_wrap = false;
-const select3 = new Select('Select an option to perform:', [
-  '[0] View Blooks ',
-  '[1] Purchase Pack ',
-  '[2] Purchase Pack in Bulk ',
-  '[3] Flip in Bulk ',
-  '[4] Flip while 2x ',
-  '[5] Open while 2x',
-]);
-const select4 = new Select('Blooks:', []);
-const select5 = new Select('Items:', []);
-const select6 = new Select('', ['[0] Stop '], {
+const root_select = new Select('Select a page to view:', ['-> Open Packs ', '-> Pack Rates ', '-> Items & Weekly Shop ']);
+const pack_search = new Searchable('Select a pack to view:', []);
+pack_search.component.v_wrap = false;
+const blook_view = new Select('Blooks:', ['-> Exit '], {
   header_func: s => s,
 });
-const select7 = new Select('', ['[0] No ', '[1] Yes ']);
+blook_view.component.v_wrap = false;
+const item_select = new Select('Items:', []);
+const opener_stop = new Select('', ['-> Stop '], {
+  header_func: s => s,
+});
+const item_buy_confirm = new Select('', ['-> No ', '-> Yes ']);
+
+type OpenConfig = {
+  /** The pack to open. */
+  pack: string;
+  /** Limitations that stop the opener automatically. */
+  limits?: {
+    /** The maximum amount of tokens to spend. */
+    tokens?: number;
+    /** The maximum amount of packs to open. */
+    packs?: number;
+    /** Whether to continue opening attempts when the user has run out of tokens. */
+    ignore_out_of_tokens?: boolean;
+    /** A list of blooks that will stop the opening process once received. */
+    blooks?: string[];
+    /** The minimum booster rate to open packs at. */
+    min_booster?: number;
+  };
+  /** Configuration for selling blooks. */
+  sell?: {
+    /**
+     * The mode of selling.
+     * - `instant`: Sell the blook immediately after it is received.
+     * - `batch`: Sell the blooks in batches of higher quantities less frequently.
+     * - `end`: Sell the blooks at the end of the opening process or when tokens run out.
+     * - `off`: Do not sell any blooks.
+     */
+    mode: 'instant' | 'batch' | 'end' | 'off';
+    /** A list of blooks to not sell. */
+    blacklist?: string[];
+    /** A list of rarities to not sell. */
+    blacklist_rarities?: string[];
+    /** Whether to force sell remaining blooks after conclusion. */
+    sell_at_end?: boolean;
+  };
+};
+type StaticConfig = {
+  /** The pack to open. */
+  pack: string;
+  /** Limitations that stop the opener automatically. */
+  limits: {
+    /** The maximum amount of tokens to spend. */
+    tokens: number;
+    /** The maximum amount of packs to open. */
+    packs: number;
+    /** Whether to continue opening attempts when the user has run out of tokens. */
+    ignore_out_of_tokens: boolean;
+    /** A list of blooks that will stop the opening process once received. */
+    blooks: string[];
+    /** The minimum booster rate to open packs at. */
+    min_booster: number;
+  };
+  /** Configuration for selling blooks. */
+  sell: {
+    /**
+     * The mode of selling.
+     * - `instant`: Sell the blook immediately after it is received.
+     * - `batch`: Sell the blooks in batches of higher quantities less frequently.
+     * - `end`: Sell the blooks at the end of the opening process or when tokens run out.
+     * - `off`: Do not sell any blooks.
+     */
+    mode: 'instant' | 'batch' | 'end' | 'off';
+    /** A list of blooks to not sell. */
+    blacklist: string[];
+    /** A list of rarities to not sell. */
+    blacklist_rarities: string[];
+    /** Whether to force sell remaining blooks after conclusion. */
+    sell_at_end: boolean;
+  };
+};
+type Metrics = {
+  /** Whether the opening process has concluded or not. */
+  complete: boolean;
+  /** Net packs opened this run. */
+  packs_opened: number;
+  /** Tokens spent on packs opened. */
+  tokens_spent: number;
+  /** Tokens earned on blooks sold. */
+  tokens_earned: number;
+  /** Log of all blooks receieved. */
+  blooks: Record<string, number>;
+  /** Net record of blooks receieved. */
+  net_blooks: Record<string, number>;
+  /** Instant sell value of `net_blooks`. */
+  instant_sell_value: 0;
+  /** The blook received from this yield if an error did not occur. */
+  last_blook?: {
+    name: string;
+    /** Whether the blook received from this yield is a new blook if an error did not occur. */
+    new?: boolean;
+  } & Data['blooks'][keyof Data['blooks']];
+  /** The error received from this yield if an error did occur. */
+  last_error?: string;
+};
+
+const ConfigSchema = {
+  type: 'object',
+  display: 'Opener Configuration',
+  description: 'Configure the opener to open packs automatically.',
+  props: {
+    pack: {
+      type: 'select',
+      display: 'Pack',
+      description: 'The pack to open.',
+      choices: ['Pack1', 'Pack2', 'Pack3'],
+      required: true,
+    },
+    limits: {
+      type: 'object',
+      display: 'Limitations',
+      description: 'Limits that stop the opener',
+      props: {
+        tokens: {
+          type: 'number',
+          display: '# of Tokens',
+          description: 'The maximum amount of tokens to spend',
+          default: 0,
+          min: 0,
+        },
+        packs: {
+          type: 'number',
+          display: '# of Packs',
+          description: 'The maxmium amount of packs to open',
+          default: 0,
+          min: 0,
+        },
+        ignore_out_of_tokens: {
+          type: 'boolean',
+          static: true,
+          display: 'Ignore Out of Tokens',
+          description: 'Continue opening attempts when out of tokens',
+          default: false,
+        },
+        blooks: {
+          type: 'array',
+          display: 'Blooks',
+          description: 'List of blooks that will stop the opener when receieved',
+          default: [],
+          choices: ['Blook1', 'Blook2', 'Blook3'],
+        },
+        min_booster: {
+          type: 'number',
+          display: 'Min Booster',
+          description: 'Minimum booster rate to open packs at',
+          default: 0,
+          min: 0,
+          max: 2,
+          allow_float: true,
+        },
+      },
+    },
+    sell: {
+      type: 'object',
+      display: 'Auto Sell',
+      description: 'Configuration for selling blooks',
+      props: {
+        mode: {
+          type: 'select',
+          display: 'Mode',
+          description: 'The mode of selling',
+          default: 'off',
+          choices: ['instant', 'batch', 'end', 'off'],
+        },
+        blacklist: {
+          type: 'array',
+          display: 'Blacklist',
+          description: 'List of blooks to not sell',
+          default: [],
+          choices: ['Blook1', 'Blook2', 'Blook3'],
+        },
+        blacklist_rarities: {
+          type: 'array',
+          display: 'Blacklist Rarities',
+          description: 'List of rarities to not sell',
+          default: [],
+          choices: ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mystical'],
+        },
+        sell_at_end: {
+          type: 'boolean',
+          display: 'Sell at End',
+          description: 'Force sell remaining blooks after conclusion',
+          default: false,
+        },
+      },
+    },
+  },
+};
 
 /**
- * The market context for viewing and purchasing packs
- * @param terminal Reference to the root terminal
- * @param token The token of the authenticated account
- * @param notif_section The global notification component
- * @param tokens The global tokens component
+ * Configures and runs an opener to open packs automatically. Consistently returns metrics on the opening process.
+ * @param token The token of the authenticated account.
+ * @param opener_config The configuration for the opener.
+ * @returns An async generator that yields metrics on the opening process.
  */
-export default async function (terminal: Terminal, token: string, notif_section: Notification, tokens: Tokens, booster: Booster): Promise<void> {
-  text.text = Color.yellow('Fetching market...');
-  terminal.push(text);
+export async function* opener(token: string, opener_config: OpenConfig): AsyncGenerator<Metrics, void, void> {
+  const config: StaticConfig = {
+    pack: opener_config.pack,
+    limits: {
+      tokens: Infinity,
+      packs: Infinity,
+      ignore_out_of_tokens: false,
+      blooks: [],
+      min_booster: 0,
+      ...opener_config.limits,
+    },
+    sell: {
+      mode: 'off',
+      blacklist: [],
+      blacklist_rarities: [],
+      sell_at_end: false,
+      ...opener_config.sell,
+    },
+  };
+  const metrics: Metrics = {
+    complete: false,
+    packs_opened: 0,
+    tokens_spent: 0,
+    tokens_earned: 0,
+    blooks: {},
+    net_blooks: {},
+    instant_sell_value: 0,
+  };
   const _data = await v1.data(true);
   if (_data.error) {
-    notif_section.push_error(_data.reason);
-    terminal.pop(text);
+    metrics.last_error = _data.reason;
+    yield metrics;
     return;
   }
   const data = _data.data;
-  function rarity_color(rarity: string): string {
-    const rarity_info = data.rarities[rarity];
-    if (!rarity_info) return '#ffffff';
-    return rarity_info.color;
+  const pack_price = data.packs[config.pack]?.price ?? 0;
+  let limit_reached = false;
+  let booster_rate = data.booster.multiplier;
+  let booster_end: Date | null = data.booster.time ? new Date(data.booster.time) : null;
+
+  function can_sell_blook(blook_name: string, quantity?: number): boolean {
+    if (config.sell.blacklist.includes(blook_name)) return false;
+    if (config.sell.blacklist_rarities.includes(data.blooks[blook_name]?.rarity)) return false;
+    if (config.limits.blooks.includes(blook_name)) return false;
+    if (typeof quantity === 'number' && quantity <= 0) return false;
+    return true;
   }
-  const all_blooks = data.blooks;
-  const packs = data.packs;
-  const items = {
-    'Clan Shield': { price: 100000, glow: false },
-    'Fragment Grenade (Item)': { price: 100000, glow: false },
-    'Stealth Disguise Kit (Item)': { price: 250000, glow: false },
-    ...data.weekly_shop,
-  };
-
-  text.text = '';
-  main: while (true) {
-    const _select = await select.response_bind(terminal);
-    switch (_select) {
-      case -1: {
-        break main;
+  async function sell_all_blooks(): Promise<void> {
+    for (const [blook_name, quantity] of Object.entries(metrics.blooks)) {
+      if (!can_sell_blook(blook_name, quantity)) continue;
+      const res = await v1.sell(token, blook_name, quantity);
+      if (res.error) {
+        await Bun.sleep(1200);
+        continue;
       }
-      case 0: {
-        const packs_map = Object.entries(packs);
-        select2.set_choices(packs_map.map(([k, v]) => `${k} - ${v.price} tokens `));
-        pack: while (true) {
-          const _select2 = await select2.response_bind(terminal);
-          if (_select2 === -1) continue main;
-          const [pack_name, pack_info] = packs_map[_select2];
-          select3.set_question(`Select an option to perform on ${Color.bold(pack_name + ' - ' + pack_info.price + ' tokens')}:`);
-          while (true) {
-            select3.set_selected_index(0);
-            const _select3 = await select3.response_bind(terminal);
-            if (_select3 === -1) continue pack;
-            switch (_select3) {
-              case 0: {
-                const blooks = pack_info.blooks.map(blook => {
-                  const blook_info = all_blooks[blook as keyof typeof all_blooks];
-                  if (!blook_info) return `[${Color.hex('#ffffff', 'Unknown')}] ${blook}`;
-                  const hex = rarity_color(blook_info.rarity);
-                  return `[${Color.hex(hex, blook_info.rarity)}] ${Color.hex(hex, blook)} - ${Color.hex(hex, blook_info.chance + '%')}`;
-                });
-                select4.set_options([...blooks, '[0] Back ']);
-                select4.set_disabled_indexes(blooks.map((_, idx) => idx));
-                select4.set_selected_index(blooks.length);
-                await select4.response_bind(terminal);
-                break;
-              }
-              case 1: {
-                text.text = Color.yellow(`Purchasing ${Color.bold(pack_name)} pack...`);
-                terminal.write_buffer();
-                const res = await v1.open(token, pack_name);
-                text.text = '';
-                if (res.error) {
-                  notif_section.push_error(res.reason);
-                  break;
-                }
-                tokens.remove_tokens(pack_info.price);
-                const blook_info = all_blooks[res.blook];
-                if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
-                else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
-                break;
-              }
-              case 2: {
-                let opened = 0;
-                let tokens_spent = 0;
-                let last_blook = '';
-                let run = true;
-                const results: { [key: string]: number } = {};
-                terminal.push(select6.component);
-                select6.response().then(_select6 => {
-                  run = false;
-                });
-                while (run) {
-                  const res = await v1.open(token, pack_name);
-                  if (res.error) {
-                    notif_section.push_error(res.reason);
-                    continue;
-                  }
+      metrics.tokens_earned += data.blooks[blook_name].price * quantity;
+      delete metrics.blooks[blook_name];
+      await Bun.sleep(1200);
+    }
+  }
+  async function sell_blook(blook_name: string, quantity: number): Promise<void> {
+    if (!can_sell_blook(blook_name, quantity)) return;
+    metrics.blooks[blook_name] -= quantity;
+    v1.sell(token, blook_name, quantity).then(res => {
+      if (res.error) {
+        metrics.blooks[blook_name] += quantity;
+        return;
+      }
+      metrics.tokens_earned += data.blooks[blook_name].price * quantity;
+      if (metrics.blooks[blook_name] <= 0) delete metrics.blooks[blook_name];
+    });
+  }
 
-                  const blook_info = all_blooks[res.blook];
-                  if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
-                  else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
+  while (!limit_reached) {
+    delete metrics.last_blook;
+    delete metrics.last_error;
+    if (metrics.tokens_spent + pack_price >= config.limits.tokens) break;
+    if (metrics.packs_opened >= config.limits.packs) break;
+    if (booster_rate < config.limits.min_booster && booster_end) {
+      await Bun.sleep(booster_end);
+      await Bun.sleep(60_000);
+      booster_rate = 0;
+      booster_end = null;
+    }
+    if (config.limits.min_booster > 0 && (booster_rate === 0 || !booster_end)) {
+      const _data = await v1.data(false);
+      if (_data.error) {
+        await Bun.sleep(2000);
+        continue;
+      }
+      const booster = _data.data.booster;
+      if (!booster.active) {
+        await Bun.sleep(2000);
+        continue;
+      }
+      booster_rate = booster.multiplier;
+      booster_end = new Date(booster.time);
+      continue;
+    }
+    const res = await v1.open(token, config.pack);
+    if (res.error) {
+      metrics.last_error = res.reason;
+      yield metrics;
+      await Bun.sleep(100);
+      if (res.reason.toLowerCase().includes('tokens')) {
+        if (!config.limits.ignore_out_of_tokens) limit_reached = true;
+        else if (config.sell.mode === 'end') await sell_all_blooks();
+      }
+      continue;
+    }
+    const blook_name = res.blook;
+    const blook = data.blooks[blook_name];
+    if (config.limits.blooks.includes(blook_name)) limit_reached = true;
+    metrics.packs_opened++;
+    metrics.tokens_spent += pack_price;
+    metrics.blooks[blook_name] = (metrics.blooks[blook_name] ?? 0) + 1;
+    metrics.net_blooks[blook_name] = (metrics.net_blooks[blook_name] ?? 0) + 1;
+    metrics.instant_sell_value += blook.price;
+    metrics.last_blook = {
+      name: blook_name,
+      new: res.new ?? false,
+      ...blook,
+    };
+    yield metrics;
+    if (config.sell.mode === 'instant') sell_blook(blook_name, metrics.blooks[blook_name]);
+    await Bun.sleep((data.rarities[blook.rarity].wait ?? 50) - 50);
+    if (config.sell.mode === 'batch' && metrics.packs_opened % 3 === 0) {
+      const filtered_blooks = Object.entries(metrics.blooks).filter(([blook_name, quantity]) => can_sell_blook(blook_name, quantity));
+      const [blook_name, quantity] = filtered_blooks.reduce((a, b) => (a[1] > b[1] ? a : b), ['', 0]);
+      if (blook_name) sell_blook(blook_name, quantity);
+    }
+  }
+  if (config.sell.mode === 'end' || config.sell.sell_at_end) await sell_all_blooks();
+  metrics.complete = true;
+  yield metrics;
+}
 
-                  opened++;
-                  tokens_spent += pack_info.price;
-                  tokens.remove_tokens(pack_info.price);
-                  results[res.blook] = (results[res.blook] ?? 0) + 1;
-                  last_blook = res.blook;
-                  const value = Object.entries(results)
-                    .map(([blook_name, count]) => {
-                      return all_blooks[blook_name].price * count;
-                    })
-                    .reduce((a, b) => a + b, 0);
-                  select6.set_question(
-                    Color.join(
-                      Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
-                      '\n',
-                      Color.yellow(
-                        Color.underline('Opened'),
-                        ': ',
-                        Color.bold(opened.toLocaleString()),
-                        '\n',
-                        Color.underline('Tokens spent'),
-                        ': ',
-                        Color.bold(tokens_spent.toLocaleString()),
-                        '\n',
-                        Color.underline('Instant value'),
-                        ': ',
-                        Color.bold(value.toLocaleString()),
-                        ' ',
-                        value >= tokens_spent
-                          ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
-                          : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
-                        '\nUnlocks:\n'
-                      ),
-                      Object.entries(results)
-                        .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
-                        .sort((a, b) => {
-                          return a[2].chance - b[2].chance;
-                        })
-                        .map(([blook, count, blook_info]) => {
-                          const hex = rarity_color(blook_info?.rarity);
-                          const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')}`;
-                          if (last_blook === blook) return Color.bold(text);
-                          return text;
-                        })
-                        .join('\n')
-                    )
-                  );
-                  terminal.write_buffer();
-                  await new Promise(r => setTimeout(r, data.rarities[all_blooks[res.blook].rarity].wait ?? 0));
-                }
-                terminal.pop(select6.component);
-                break;
-              }
-              case 3: {
-                let opened = 0;
-                let tokens_spent = 0;
-                let last_blook = '';
-                let run = true;
-                const results: { [key: string]: number } = {};
-                const temp_results: { [key: string]: number } = {};
-                terminal.push(select6.component);
-                select6.response().then(_select6 => {
-                  run = false;
-                });
-                while (run) {
-                  const res = await v1.open(token, pack_name);
-                  if (res.error) {
-                    notif_section.push_error(res.reason);
-                    continue;
-                  }
-                  const blook_info = all_blooks[res.blook];
-                  if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
-                  else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
+const default_config: StaticConfig = {
+  pack: '',
+  limits: {
+    tokens: Infinity,
+    packs: Infinity,
+    ignore_out_of_tokens: false,
+    blooks: [],
+    min_booster: 0,
+  },
+  sell: {
+    mode: 'off',
+    blacklist: [],
+    blacklist_rarities: [],
+    sell_at_end: false,
+  },
+};
 
-                  opened++;
-                  tokens_spent += pack_info.price;
-                  tokens.remove_tokens(pack_info.price);
-                  results[res.blook] = (results[res.blook] ?? 0) + 1;
-                  if (blook_info && blook_info.rarity !== 'Mystical') temp_results[res.blook] = (temp_results[res.blook] ?? 0) + 1;
-                  last_blook = res.blook;
-                  const value = Object.entries(results)
-                    .map(([blook_name, count]) => {
-                      return all_blooks[blook_name].price * count;
-                    })
-                    .reduce((a, b) => a + b, 0);
-                  select6.set_question(
-                    Color.join(
-                      Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
-                      '\n',
-                      Color.yellow(
-                        Color.underline('Opened'),
-                        ': ',
-                        Color.bold(opened.toLocaleString()),
-                        '\n',
-                        Color.underline('Tokens spent'),
-                        ': ',
-                        Color.bold(tokens_spent.toLocaleString()),
-                        '\n',
-                        Color.underline('Instant value'),
-                        ': ',
-                        Color.bold(value.toLocaleString()),
-                        ' ',
-                        value >= tokens_spent
-                          ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
-                          : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
-                        '\nUnlocks:\n'
-                      ),
-                      Object.entries(results)
-                        .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
-                        .sort((a, b) => {
-                          return a[2].chance - b[2].chance;
-                        })
-                        .map(([blook, count, blook_info]) => {
-                          const hex = rarity_color(blook_info?.rarity);
-                          const suffix = temp_results[blook] ? Color.bright_black(temp_results[blook] + 'x') : '';
-                          const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')} ${suffix}`;
-                          if (last_blook === blook) return Color.bold(text);
-                          return text;
-                        })
-                        .join('\n')
-                    )
-                  );
-                  terminal.write_buffer();
-                  await new Promise(r => setTimeout(r, data.rarities[all_blooks[res.blook].rarity].wait ?? 0));
-                  if (opened % 3 === 0) {
-                    const blook_name = Object.keys(temp_results)[0];
-                    if (!blook_name) continue;
-                    const blook_price = all_blooks[blook_name].price ?? 0;
-                    const quantity = temp_results[blook_name];
-                    v1.sell(token, blook_name, quantity).then(res => {
-                      if (res.error) notif_section.push_error(res.reason);
-                      else {
-                        notif_section.push_success(`Sold ${quantity}x ${blook_name} for ${(quantity * blook_price).toLocaleString()} tokens`);
-                        if (temp_results[blook_name] === quantity) delete temp_results[blook_name];
-                        else temp_results[blook_name] -= quantity;
-                        tokens.add_tokens(quantity * blook_price);
-                      }
-                    });
-                  }
-                }
-                terminal.pop(select6.component);
-                break;
-              }
-              case 4: {
-                let opened = 0;
-                let tokens_spent = 0;
-                let last_blook = '';
-                let run = true;
-                const results: { [key: string]: number } = {};
-                const temp_results: { [key: string]: number } = {};
-                terminal.push(select6.component);
-                select6.response().then(_select6 => {
-                  run = false;
-                });
-
-                (async () => {
-                  for (; run; ) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    const blook_name = Object.keys(temp_results)[0];
-                    if (!blook_name) continue;
-                    const blook_price = all_blooks[blook_name].price ?? 0;
-                    const quantity = temp_results[blook_name];
-                    const res = await v1.sell(token, blook_name, quantity);
-                    if (res.error) notif_section.push_error('SELL ' + res.reason);
-                    else {
-                      notif_section.push_success(`Sold ${quantity}x ${blook_name} for ${(quantity * blook_price).toLocaleString()} tokens`);
-                      if (temp_results[blook_name] === quantity) delete temp_results[blook_name];
-                      else temp_results[blook_name] -= quantity;
-                      tokens.add_tokens(quantity * blook_price);
-                    }
-                  }
-                })();
-
-                while (run) {
-                  if (booster.multiplier !== 2 || booster.end_time < Date.now()) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    continue;
-                  }
-                  const res = await v1.open(token, pack_name);
-                  if (res.error) {
-                    notif_section.push_error(res.reason);
-                    continue;
-                  }
-                  const blook_info = all_blooks[res.blook];
-                  if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
-                  else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
-
-                  opened++;
-                  tokens_spent += pack_info.price;
-                  tokens.remove_tokens(pack_info.price);
-                  results[res.blook] = (results[res.blook] ?? 0) + 1;
-                  if (blook_info && blook_info.rarity !== 'Mystical') temp_results[res.blook] = (temp_results[res.blook] ?? 0) + 1;
-                  last_blook = res.blook;
-                  const value = Object.entries(results)
-                    .map(([blook_name, count]) => {
-                      return all_blooks[blook_name].price * count;
-                    })
-                    .reduce((a, b) => a + b, 0);
-                  select6.set_question(
-                    Color.join(
-                      Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
-                      '\n',
-                      Color.yellow(
-                        Color.underline('Opened'),
-                        ': ',
-                        Color.bold(opened.toLocaleString()),
-                        '\n',
-                        Color.underline('Tokens spent'),
-                        ': ',
-                        Color.bold(tokens_spent.toLocaleString()),
-                        '\n',
-                        Color.underline('Instant value'),
-                        ': ',
-                        Color.bold(value.toLocaleString()),
-                        ' ',
-                        value >= tokens_spent
-                          ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
-                          : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
-                        '\nUnlocks:\n'
-                      ),
-                      Object.entries(results)
-                        .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
-                        .sort((a, b) => {
-                          return a[2].chance - b[2].chance;
-                        })
-                        .map(([blook, count, blook_info]) => {
-                          const hex = rarity_color(blook_info?.rarity);
-                          const suffix = temp_results[blook] ? Color.bright_black(temp_results[blook] + 'x') : '';
-                          const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')} ${suffix}`;
-                          if (last_blook === blook) return Color.bold(text);
-                          return text;
-                        })
-                        .join('\n')
-                    )
-                  );
-                  terminal.write_buffer();
-                  await new Promise(r => setTimeout(r, (data.rarities[all_blooks[res.blook].rarity].wait ?? 50) - 50));
-                }
-                terminal.pop(select6.component);
-                break;
-              }
-              case 5: {
-                let opened = 0;
-                let tokens_spent = 0;
-                let last_blook = '';
-                let run = true;
-                const results: { [key: string]: number } = {};
-                terminal.push(select6.component);
-                select6.response().then(_select6 => {
-                  run = false;
-                });
-                while (run) {
-                  if (booster.multiplier !== 2 || booster.end_time < Date.now()) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    continue;
-                  }
-                  const res = await v1.open(token, pack_name);
-                  if (res.error) {
-                    notif_section.push_error(res.reason);
-                    continue;
-                  }
-
-                  const blook_info = all_blooks[res.blook];
-                  if (!blook_info) notif_section.push_success(`Received ${res.blook}`);
-                  else notif_section.push_success(Color.hex(rarity_color(blook_info.rarity), res.blook, ` (${blook_info.chance}%)`));
-
-                  opened++;
-                  tokens_spent += pack_info.price;
-                  tokens.remove_tokens(pack_info.price);
-                  results[res.blook] = (results[res.blook] ?? 0) + 1;
-                  last_blook = res.blook;
-                  const value = Object.entries(results)
-                    .map(([blook_name, count]) => {
-                      return all_blooks[blook_name].price * count;
-                    })
-                    .reduce((a, b) => a + b, 0);
-                  select6.set_question(
-                    Color.join(
-                      Color.green(Color.underline('Opening pack'), ': ', Color.bold(pack_name)),
-                      '\n',
-                      Color.yellow(
-                        Color.underline('Opened'),
-                        ': ',
-                        Color.bold(opened.toLocaleString()),
-                        '\n',
-                        Color.underline('Tokens spent'),
-                        ': ',
-                        Color.bold(tokens_spent.toLocaleString()),
-                        '\n',
-                        Color.underline('Instant value'),
-                        ': ',
-                        Color.bold(value.toLocaleString()),
-                        ' ',
-                        value >= tokens_spent
-                          ? Color.green(`(+${(value - tokens_spent).toLocaleString()})`)
-                          : Color.red(`(-${(tokens_spent - value).toLocaleString()})`),
-                        '\nUnlocks:\n'
-                      ),
-                      Object.entries(results)
-                        .map(([blook, count]) => [blook, count, all_blooks[blook]] as const)
-                        .sort((a, b) => {
-                          return a[2].chance - b[2].chance;
-                        })
-                        .map(([blook, count, blook_info]) => {
-                          const hex = rarity_color(blook_info?.rarity);
-                          const text = `[${Color.hex(hex, blook_info?.rarity)}] ${Color.hex(hex, blook)} - ${Color.green(count + 'x')}`;
-                          if (last_blook === blook) return Color.bold(text);
-                          return text;
-                        })
-                        .join('\n')
-                    )
-                  );
-                  terminal.write_buffer();
-                  await new Promise(r => setTimeout(r, data.rarities[all_blooks[res.blook].rarity].wait ?? 0));
-                }
-                terminal.pop(select6.component);
-                break;
-              }
-            }
-          }
+export const states = {
+  /**
+   * The root state for the market context.
+   * @param state The current state.
+   */
+  root: async (state: State): Promise<void> => {
+    while (true) {
+      switch (await root_select.response_bind(state.terminal)) {
+        case -1: {
+          return;
         }
-      }
-      case 1: {
-        const items_map = Object.entries(items);
-        select5.set_options(items_map.map(([k, v], idx) => `[${idx}] ${k} - ${v.price.toLocaleString()} tokens `));
-        shop: while (true) {
-          const _select5 = await select5.response_bind(terminal);
-          if (_select5 === -1) break shop;
-          const [item_name, item_info] = items_map[_select5];
-          select7.set_question(`Are you sure you want to purchase ${Color.bold(item_name)} for ${Color.bold(item_info.price.toLocaleString())} tokens?`);
-          select7.set_selected_index(0);
-          const _select7 = await select7.response_bind(terminal);
-          switch (_select7) {
-            case -1:
-            case 0: {
-              continue shop;
-            }
-            case 1: {
-              const _buy = await v1.buy(token, item_name);
-              if (_buy.error) notif_section.push_error(_buy.reason);
-              else notif_section.push_success(_buy.message);
-            }
-          }
+        case 0: {
+          await states.run_opener(state);
+          break;
+        }
+        case 1: {
+          await states.view_packs(state);
+          break;
+        }
+        case 2: {
+          await states.shop(state);
+          break;
         }
       }
     }
-  }
-  terminal.pop(text, select.component);
-}
+  },
+  /**
+   * Generates a configuration for the opener.
+   * @param state The current state.
+   * @returns The configuration for the opener or null if cancelled.
+   */
+  configure_opener: async (state: State): Promise<StaticConfig | null> => {
+    const data = await v1.data(true);
+    if (data.error) return null;
+    const config = new Proxy(default_config, {
+      set: (target, prop, value) => {
+        target[prop as keyof StaticConfig] = value;
+
+        if (prop === 'pack' && value) {
+          const blooks = data.data.packs[value].blooks;
+          const blook_rarities = blooks.map(blook => data.data.blooks[blook].rarity);
+          const rarities = Object.keys(data.data.rarities).filter(rarity => blook_rarities.includes(rarity));
+          ConfigSchema.props.limits.props.blooks.choices = blooks;
+          ConfigSchema.props.sell.props.blacklist.choices = blooks;
+          ConfigSchema.props.sell.props.blacklist_rarities.choices = rarities;
+          target.limits.blooks = [];
+          target.sell.blacklist = [];
+          target.sell.blacklist_rarities = [];
+        }
+
+        return true;
+      },
+    });
+    ConfigSchema.props.pack.choices = Object.keys(data.data.packs);
+    const configure = new Configure<StaticConfig>(config, ConfigSchema as Schema);
+    const res = await configure.response_bind(state.terminal);
+    if (res) return config;
+    return null;
+  },
+  /**
+   * Runs the opener with the provided configuration or generates one if necessary.
+   * @param state The current state.
+   * @param configuration The configuration for the opener.
+   */
+  run_opener: async (state: State, configuration?: StaticConfig): Promise<void> => {
+    const data = await v1.data(true);
+    if (data.error) return;
+    const config = configuration ?? (await states.configure_opener(state));
+    if (!config) return;
+
+    let stop = false;
+    opener_stop.set_options([Color.bold('-> Stop ')]);
+    opener_stop.response_bind(state.terminal).then(() => {
+      stop = true;
+    });
+    for await (const metrics of opener(state.token, config)) {
+      opener_stop.set_question(
+        [
+          Color.green(Color.underline('Opening pack'), ': ', Color.bold(config.pack)),
+          Color.yellow(
+            Color.underline('Packs Opened'),
+            ': ',
+            Color.bold(metrics.packs_opened.toLocaleString()),
+            config.limits.packs ? `/${config.limits.packs.toLocaleString()}` : ''
+          ),
+          Color.yellow(
+            Color.underline('Tokens Spent'),
+            ': ',
+            Color.bold(metrics.tokens_spent.toLocaleString()),
+            config.limits.tokens ? `/${config.limits.tokens.toLocaleString()}` : ''
+          ),
+          Color.yellow(Color.underline('Instant Sell Value'), ': ', Color.bold(metrics.instant_sell_value.toLocaleString())),
+          Color.yellow('Net Unlocks:'),
+          ...Object.entries(metrics.net_blooks)
+            .sort(([blook1], [blook2]) => {
+              return data.data.blooks[blook2].price - data.data.blooks[blook1].price || blook1.localeCompare(blook2);
+            })
+            .map(([blook_name, count]) => {
+              const blook = data.data.blooks[blook_name];
+              const hex = data.data.rarities[blook.rarity].color;
+              const func = metrics.last_blook?.name === blook_name ? Color.bold : Color.join;
+              return func(`[${Color.hex(hex, blook.rarity)}] ${Color.hex(hex, blook_name)} - ${Color.green(count + 'x')}`);
+            }),
+        ].join('\n')
+      );
+      if (stop) {
+        state.terminal.pop(opener_stop.component);
+        return;
+      }
+    }
+    opener_stop.set_options([Color.bold('-> Exit ', Color.reset(' ', Color.red(Color.blink_slow('(Opener has finished)'))))]);
+    await opener_stop.response_bind(state.terminal);
+  },
+  /**
+   * Displays the shop and allows the user to purchase items.
+   * @param state The current state.
+   */
+  shop: async (state: State): Promise<void> => {
+    const data = await v1.data(true);
+    if (data.error) return;
+    const items = {
+      'Clan Shield': { price: 100000, glow: false },
+      'Fragment Grenade (Item)': { price: 100000, glow: false },
+      'Stealth Disguise Kit (Item)': { price: 250000, glow: false },
+      ...data.data.weekly_shop,
+    };
+    const items_map = Object.entries(items);
+    item_select.set_options(items_map.map(([k, v]) => `-> ${k} - ${v.price.toLocaleString()} tokens `));
+    while (true) {
+      const select5_idx = await item_select.response_bind(state.terminal);
+      if (select5_idx === -1) break;
+      const [item_name, item_info] = items_map[select5_idx];
+      await states.shop_buy_confirm(state, item_name, item_info.price);
+    }
+  },
+  /**
+   * Confirms the purchase of an item from the shop.
+   * @param state The current state.
+   * @param item_name The name of the item to purchase.
+   * @param item_price The price of the item to purchase.
+   * @returns Whether the purchase was confirmed and successful or not.
+   */
+  shop_buy_confirm: async (state: State, item_name: string, item_price: number): Promise<boolean> => {
+    item_buy_confirm.set_question(`Are you sure you want to purchase ${Color.bold(item_name)} for ${Color.bold(item_price.toLocaleString())} tokens?`);
+    item_buy_confirm.set_selected_index(0);
+    switch (await item_buy_confirm.response_bind(state.terminal)) {
+      case -1:
+      case 0: {
+        return false;
+      }
+      case 1: {
+        const buy_res = await v1.buy(state.token, item_name);
+        if (buy_res.error) state.notif_section.push_error(buy_res.reason);
+        else {
+          state.notif_section.push_success(buy_res.message);
+          state.tokens.remove_tokens(item_price);
+          return true;
+        }
+        return false;
+      }
+    }
+    return false;
+  },
+  /**
+   * Displays the packs available and allows the user to view the blooks in each pack.
+   * @param state The current state.
+   */
+  view_packs: async (state: State): Promise<void> => {
+    const data = await v1.data(true);
+    if (data.error) return;
+    const packs = Object.keys(data.data.packs);
+    pack_search.set_choices(packs.map(pack => `-> ${pack} `));
+    while (true) {
+      const select2_idx = await pack_search.response_bind(state.terminal);
+      if (select2_idx === -1) break;
+      await states.view_blooks(state, packs[select2_idx]);
+    }
+  },
+  /**
+   * Displays the blooks in a pack.
+   * @param state The current state.
+   * @param pack The pack to view.
+   */
+  view_blooks: async (state: State, pack: string): Promise<void> => {
+    const data = await v1.data(true);
+    if (data.error) return;
+    const blooks = data.data.packs[pack].blooks;
+    const rarities = data.data.rarities;
+    blook_view.set_question(
+      [
+        Color.underline(`Blooks in ${Color.bold(pack)}:`),
+        ...blooks
+          .sort((a, b) => data.data.blooks[a].chance - data.data.blooks[b].chance || a.localeCompare(b))
+          .map(blook => {
+            const rarity = data.data.blooks[blook].rarity;
+            const chance = data.data.blooks[blook].chance;
+            const hex = rarities[rarity].color;
+            return Color.bright_black(`[${Color.hex(hex, rarity)}] ${Color.hex(hex, blook)} - ${Color.hex(hex, chance + '%')}`);
+          }),
+      ].join('\n')
+    );
+    await blook_view.response_bind(state.terminal);
+  },
+};

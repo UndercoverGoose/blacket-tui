@@ -1,7 +1,7 @@
 import { Select } from '@component/.';
 import { states as leaderboard } from '@ctx/leaderboard';
 import { states as inventory } from '@ctx/inventory';
-import market from '@ctx/market';
+import { states as market } from '@ctx/market';
 import { states as statistics } from '@ctx/statistics';
 import { states as blooks } from '@ctx/blooks';
 import { states as bazaar } from '@ctx/bazaar';
@@ -48,7 +48,7 @@ export default async function (state: State): Promise<void> {
         break;
       }
       case 4: {
-        await market(state.terminal, state.token, state.notif_section, state.tokens, state.booster);
+        await market.root(state);
         break;
       }
       case 5: {
