@@ -21,7 +21,7 @@ type Store = {
       }
   );
 };
-const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
+export const Store: Store = await new Dynamic<Store>('auth.json', {}).setup();
 
 const root_select = new Select('Select an Authorization Method:', [
   '-> Load Previous ',
