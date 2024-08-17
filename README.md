@@ -13,24 +13,28 @@ A custom terminal user interface for [Blacket](https://blacket.org) (a custom Bl
 All menus are navigated with the keyboard. Use the arrow keys to navigate up and down in menus, pressing enter to confirm a selection. Most menus can be escaped by pressing the escape key or providing an empty input.
 
 ## Features
-- Saving multiple accounts
+- Multiple accounts
+- Supports 2FA
+- Using proxies
+- Registering new accounts
 - Viewing other players' stats
 - Claiming daily rewards
 - Viewing leaderboard
 - Viewing blooks within packs
-- Opening packs (manually and automatically)
-- Buying shop and weekly shop items
+- Opening packs (manual & auto)
+  - Advanced configuration for auto opening
+- Buying shop and weekly items
 - View blooks by different categories:
-  - All obtained
-  - All obtained by pack
-  - All missing
-  - All missing by pack
+  - All obtained (& by pack)
+  - All missing (& by pack)
   - All blooks
 - Sell and list blooks on the bazaar
-- Viewing bazaar
+- Bazaar
   - Manage your own listings
   - Search for missing blooks
+  - Search for listings by blook
   - Search for listings by user
-- Viewing inventory
+- Inventory
+  - Using items
   - Listing items
-- Using items
+- Running custom scripts
