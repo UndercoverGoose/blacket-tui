@@ -2,7 +2,7 @@ import Color from '@lib/color';
 import { Text } from '@lib/tui';
 import v1 from '@lib/api';
 
-export default class Tokens {
+export default class Booster {
   component = new Text(-1, -1, '', 1, -1);
   multiplier = 0;
   end_time = 0;
