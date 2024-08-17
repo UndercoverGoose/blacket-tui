@@ -72,6 +72,15 @@ export default class {
     return this.post('username', { username: new_username, password });
   }
   /**
+   * Set the user's password.
+   * @param old_password The user's current password.
+   * @param new_password The new password to set.
+   * @returns Whether or not the request was successful.
+   */
+  async change_password(old_password: string, new_password: string): Promise<APIResponse> {
+    return this.post('password', { oldPassword: old_password, newPassword: new_password });
+  }
+  /**
    * Internal method to make a POST request to the settings API.
    * @param endpoint The endpoint to make the request to.
    * @param data The data to send in the request.
