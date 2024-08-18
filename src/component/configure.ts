@@ -161,6 +161,7 @@ export default class<T extends Object> {
    * Wait for the user to finish configuring the object. Returns `true` if the user confirmed the configuration, `false` if the user cancelled the configuration.
    */
   async response(): Promise<boolean> {
+    this.update_component();
     return new Promise(resolve => {
       this.resolve_func = resolve;
     });

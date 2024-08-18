@@ -151,6 +151,7 @@ export default class {
    * Wait for the user to respond to the question. Returns the index of the selected option, or `-1` if the user cancels with escape.
    */
   async response(): Promise<number[]> {
+    this.update_component();
     return new Promise(resolve => {
       this.resolve_func = resolve;
     });

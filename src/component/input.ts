@@ -123,6 +123,7 @@ export default class Input {
    * Wait for the user to respond to the question. Returns the internal value of the input or `''` if the user pressed escape.
    */
   async response(): Promise<string> {
+    this.update_component();
     return new Promise(resolve => {
       this.resolve_func = resolve;
       this.update_component();
