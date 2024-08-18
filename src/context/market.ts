@@ -248,7 +248,7 @@ export async function* opener(token: string, opener_config: OpenConfig): AsyncGe
   const pack_price = data.packs[config.pack]?.price ?? 0;
   let limit_reached = false;
   let booster_rate = data.booster.multiplier;
-  let booster_end: Date | null = data.booster.time ? new Date(data.booster.time) : null;
+  let booster_end: Date | null = data.booster.time ? new Date(data.booster.time * 1000) : null;
 
   function can_sell_blook(blook_name: string, quantity?: number): boolean {
     if (config.sell.blacklist.includes(blook_name)) return false;
@@ -302,11 +302,16 @@ export async function* opener(token: string, opener_config: OpenConfig): AsyncGe
       }
       const booster = _data.data.booster;
       if (!booster.active) {
-        await Bun.sleep(2000);
+        await Bun.sleep(5000);
         continue;
       }
       booster_rate = booster.multiplier;
-      booster_end = new Date(booster.time);
+      booster_end = new Date(booster.time * 1000);
+      continue;
+    }
+    if (booster_end && config.limits.min_booster > 0 && new Date() > booster_end) {
+      booster_rate = 0;
+      booster_end = null;
       continue;
     }
     const res = await v1.open(token, config.pack);
