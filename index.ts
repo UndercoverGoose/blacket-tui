@@ -6,7 +6,7 @@ import { Notification, Tokens, Booster, User } from '@component/.';
 import v1 from '@lib/api';
 import { type State } from '@ctx/state';
 
-const VERSION = '0.8.0';
+const VERSION = '0.8.1';
 
 const terminal = new Terminal();
 const version_header = new Text(-1, 0, Color.bright_black(`[blacket-tui ~ v${VERSION}]`), 1, -1);
